@@ -1,0 +1,1341 @@
+<!doctype html>
+<!-- PROTOTYPE - NOT FOR PRODUCTION -->
+<!-- Question: 빗자루로 날며 패스·슛·방해 공 피하기가 4분 한 판 내내 재미있는가? -->
+<!-- Date: 2026-11-21 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>스카이훅</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #140f24; overflow: hidden; touch-action: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
+  body { font-variant-numeric: tabular-nums; }
+  canvas { display: block; position: absolute; left: 0; top: 0; touch-action: none; }
+  #view { z-index: 0; }
+  #game { z-index: 1; }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<canvas id="game"></canvas>
+<script src="vendor/three.js"></script>
+<script src="config.js"></script>
+<script>
+'use strict';
+// 스카이훅: an original sky sport on brooms. Three balls in one sky: score with the 볼라 through
+// the hoops, dodge the two 럼블러, and catch the golden 글리머 to end the match.
+// 3D is drawn by three.js on #view; the HUD, touch controls and screens on #game above it.
+
+// ---- Built to be checked ----------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+const tune = new Proxy({}, { get: (_, k) => CONFIG[k].value }); // live: tune.speed is CONFIG.speed.value
+const STEP = 1 / 60;            // simulation step in seconds; motion is per second, never per frame
+const W = 1280, H = 720;        // logical size of the HUD
+const PIXEL = false;
+const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif';
+const TITLE = '스카이훅';
+const CONTROLS = [
+  'WASD / 방향키: 좌우 선회 · 상승 · 하강',
+  'Shift: 가속 (급강하하면 더 빨라요)',
+  'Space 짧게: 패스 · 길게 눌렀다 떼기: 파워 슛 · 공이 없을 때: 빼앗기',
+  'E: 공에 가까운 선수로 · Tab: 추격수 (글리머 등장 후)',
+  'P: 일시정지 · M: 소리 끄기',
+];
+const TOUCH_CONTROLS = [
+  '왼쪽 조이스틱: 선회 · 상승 · 하강',
+  '슛: 짧게 = 패스, 길게 = 파워 슛, 공 없을 때 = 빼앗기',
+  '가속 · 바꾸기 · 추격수 버튼',
+];
+const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
+const CHEAP = params.get('render') === 'cheap'; // a headless shot or check: 3D draws cheap; players never see it
+let seed;
+function rng() { // mulberry32; every gameplay random call reads this, never Math.random
+  seed = (seed + 0x6D2B79F5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), seed | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const events = []; // window.game.events: anything the game wants a run to see
+
+// ---- Small maths ----------------------------------------------------------------------
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+function wrapAngle(a) { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z); }
+function norm(x, y, z) { const l = Math.hypot(x, y, z) || 1; return { x: x / l, y: y / l, z: z / l }; }
+/** Unit forward vector of a rider from its yaw and pitch (yaw 0 faces +z). */
+function fwd(r) { const c = Math.cos(r.pitch); return { x: Math.sin(r.yaw) * c, y: Math.sin(r.pitch), z: Math.cos(r.yaw) * c }; }
+
+// ---- Teams and the pitch --------------------------------------------------------------
+const TEAMS = [
+  { name: '등불매', dir: 1, css: '#ffb054', robe: 0xe9853a, trim: 0xfff0d2 },     // attacks the +z hoops
+  { name: '폭풍까마귀', dir: -1, css: '#4fd3c4', robe: 0x1d6c68, trim: 0xb9c7d2 }, // attacks the -z hoops
+];
+const ROLE_NAME = { chaser: '득점수', seeker: '추격수', keeper: '골키퍼' };
+/** The three hoops at one end of the pitch; side is +1 or -1. */
+function hoops(side) {
+  const z = side * tune.goalDistance;
+  return [{ x: -9, y: 13, z }, { x: 0, y: 18, z }, { x: 9, y: 13, z }];
+}
+
+// ---- Screen ---------------------------------------------------------------------------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const glCanvas = document.getElementById('view');
+let viewScale = 1, viewLeft = 0, viewTop = 0;
+function fit() { // fills the window at any size and pixel ratio; the 3D view sits under the HUD
+  const k = Math.min(innerWidth / W, innerHeight / H);
+  const s = k;
+  const r = s * (devicePixelRatio || 1);
+  canvas.width = Math.round(W * r); canvas.height = Math.round(H * r);
+  const cw = Math.round(W * s), ch = Math.round(H * s);
+  viewScale = s; viewLeft = Math.floor((innerWidth - cw) / 2); viewTop = Math.max(0, Math.floor((innerHeight - ch) / 2));
+  for (const c of [canvas, glCanvas]) {
+    c.style.width = cw + 'px'; c.style.height = ch + 'px';
+    c.style.left = viewLeft + 'px'; c.style.top = viewTop + 'px';
+  }
+  ctx.setTransform(r, 0, 0, r, 0, 0); ctx.imageSmoothingEnabled = true;
+  if (V) V.renderer.setSize(cw, ch, false);
+}
+addEventListener('resize', fit);
+function clear(c) { ctx.fillStyle = c; ctx.fillRect(0, 0, W, H); }
+function text(s, x, y, size, c, align = 'center', weight = '600') {
+  ctx.font = `${weight} ${size}px ${FONT}`; ctx.textAlign = align; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, size * 0.16); ctx.strokeStyle = 'rgba(12,8,30,0.85)';
+  ctx.strokeText(s, x, y); ctx.fillStyle = c; ctx.fillText(s, x, y);
+}
+function panel(x, y, w, h, r = 14, fill = 'rgba(18,12,40,0.62)') {
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = fill; ctx.fill();
+}
+
+// ---- Input: keys by position (event.code), OS key repeat ignored ------------------------
+const down = new Set(), hit = new Set();
+const pressed = code => hit.has(code); // true for one step after the key goes down
+addEventListener('keydown', e => {
+  startAudio();
+  if (!e.repeat) { down.add(e.code); hit.add(e.code); }
+  if (e.code === 'Space' || e.code === 'Tab' || e.code.startsWith('Arrow')) e.preventDefault();
+});
+addEventListener('keyup', e => down.delete(e.code));
+addEventListener('pointerdown', () => startAudio());
+addEventListener('blur', () => { down.clear(); stick = null; pointers.clear(); });
+
+// ---- Touch: a joystick on the left half, buttons on the right ---------------------------
+let touchMode = params.get('touch') === '1';
+let stick = null;                 // { id, ox, oy, x, y } in HUD pixels
+const pointers = new Map();       // pointerId -> 'stick' | key code held by a button
+const BUTTONS = [
+  { code: 'Space', label: '슛', sub: '패스', x: 1135, y: 585, r: 74 },
+  { code: 'ShiftLeft', label: '가속', x: 985, y: 640, r: 52 },
+  { code: 'KeyE', label: '바꾸기', x: 1000, y: 488, r: 44 },
+  { code: 'Tab', label: '추격수', x: 1160, y: 432, r: 44 },
+  { code: 'KeyP', label: 'II', x: 1236, y: 44, r: 28, small: true },
+  { code: 'KeyM', label: '소리', x: 1172, y: 44, r: 28, small: true, drawn: 'note' },
+];
+function toHud(e) { return { x: (e.clientX - viewLeft) / viewScale, y: (e.clientY - viewTop) / viewScale }; }
+function buttonAt(p) {
+  for (const b of BUTTONS) if (Math.hypot(p.x - b.x, p.y - b.y) < b.r * 1.18) return b;
+  return null;
+}
+addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse') touchMode = true;
+  const p = toHud(e);
+  if (scene !== 'play') {
+    if (touchMode && scene === 'pause') { hit.add('KeyP'); return; }
+    if (touchMode && Math.hypot(p.x - 1172, p.y - 44) < 34) { hit.add('KeyM'); return; }
+    hit.add('Enter'); return; // title and results: a tap or click starts
+  }
+  if (e.pointerType === 'mouse' && !touchMode) return;
+  e.preventDefault();
+  const b = buttonAt(p);
+  if (b) { pointers.set(e.pointerId, b.code); down.add(b.code); hit.add(b.code); return; }
+  if (p.x < W * 0.55 && !stick) { stick = { id: e.pointerId, ox: p.x, oy: p.y, x: p.x, y: p.y }; pointers.set(e.pointerId, 'stick'); }
+}, { passive: false });
+addEventListener('pointermove', e => {
+  if (stick && e.pointerId === stick.id) { const p = toHud(e); stick.x = p.x; stick.y = p.y; }
+});
+function pointerEnd(e) {
+  const what = pointers.get(e.pointerId);
+  if (what === 'stick') stick = null;
+  else if (what) down.delete(what);
+  pointers.delete(e.pointerId);
+}
+addEventListener('pointerup', pointerEnd);
+addEventListener('pointercancel', pointerEnd);
+addEventListener('contextmenu', e => e.preventDefault());
+function stickAxes() {
+  if (!stick) return { x: 0, y: 0 };
+  const R = tune.stickRadius;
+  let dx = (stick.x - stick.ox) / R, dy = -(stick.y - stick.oy) / R;
+  const l = Math.hypot(dx, dy);
+  if (l > 1) { dx /= l; dy /= l; }
+  if (l < 0.12) return { x: 0, y: 0 };
+  return { x: dx, y: dy };
+}
+
+// ---- Audio: started on first input, mute on M --------------------------------------------
+let audio = null, muted = false;
+function startAudio() {
+  if (!audio) {
+    const ac = window.GAME_AUDIO || new (window.AudioContext || window.webkitAudioContext)(); // a check may inject one
+    const out = ac.createGain(); out.gain.value = muted ? 0 : tune.volume;
+    out.connect(ac.destination); audio = { ac, out };
+    try { // a noise buffer for wind, whooshes and the crowd
+      const len = ac.sampleRate * 2, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      let s = 12345; for (let i = 0; i < len; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; d[i] = s / 0x3fffffff - 1; }
+      audio.noise = buf;
+      const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
+      const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 500; f.Q.value = 0.7;
+      const g = ac.createGain(); g.gain.value = 0;
+      src.connect(f).connect(g).connect(out); src.start();
+      audio.wind = { f, g };
+    } catch (e) { /* no wind: the rest still plays */ }
+  }
+  if (audio.ac.state === 'suspended') audio.ac.resume();
+}
+function setMuted(m) { muted = m; if (audio) audio.out.gain.value = m ? 0 : tune.volume; }
+addEventListener('tune', () => setMuted(muted)); // the tweak panel (an add-on), when added, moved a value: the volume follows
+function tone(freq, dur, type = 'square', vol = 0.3, delay = 0) {
+  if (!audio || muted) return;
+  const t = audio.ac.currentTime + delay, o = audio.ac.createOscillator(), g = audio.ac.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(audio.out); o.start(t); o.stop(t + dur + 0.02);
+}
+function whoosh(dur, from, to, vol = 0.35, delay = 0) {
+  if (!audio || muted || !audio.noise) return;
+  const ac = audio.ac, t = ac.currentTime + delay, src = ac.createBufferSource(); src.buffer = audio.noise;
+  const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2;
+  f.frequency.setValueAtTime(from, t); f.frequency.exponentialRampToValueAtTime(to, t + dur);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.25);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(f).connect(g).connect(audio.out); src.start(t, rngAudio() * 1.5); src.stop(t + dur + 0.05);
+}
+let audioSeed = 7; function rngAudio() { audioSeed = (audioSeed * 16807) % 2147483647; return audioSeed / 2147483647; } // sound only, never gameplay
+const SFX = {
+  pass() { tone(620, 0.09, 'triangle', 0.22); whoosh(0.22, 900, 2200, 0.12); },
+  catch() { tone(420, 0.07, 'triangle', 0.18); },
+  shot(p) { whoosh(0.5, 400, 3000, 0.4); tone(p ? 880 : 300, 0.25, 'sawtooth', 0.12); },
+  perfect() { [660, 880, 1320].forEach((f, i) => tone(f, 0.25, 'triangle', 0.2, i * 0.05)); },
+  goal() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.5, 'triangle', 0.25, i * 0.09)); whoosh(1.6, 300, 900, 0.3, 0.1); },
+  conceded() { [392, 330, 262].forEach((f, i) => tone(f, 0.35, 'triangle', 0.18, i * 0.12)); },
+  save() { tone(180, 0.15, 'square', 0.18); whoosh(0.2, 1500, 400, 0.15); },
+  thud() { tone(85, 0.35, 'sawtooth', 0.35); whoosh(0.3, 300, 120, 0.3); },
+  steal() { tone(500, 0.08, 'square', 0.18); tone(760, 0.1, 'square', 0.16, 0.06); },
+  miss() { whoosh(0.18, 1200, 600, 0.12); },
+  bell() { [1320, 1760, 1320, 1760].forEach((f, i) => tone(f, 0.6, 'sine', 0.2, i * 0.18)); },
+  win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.6, 'triangle', 0.25, i * 0.12)); },
+  lose() { [440, 392, 349, 262].forEach((f, i) => tone(f, 0.6, 'triangle', 0.2, i * 0.16)); },
+};
+
+// ---- The match state ------------------------------------------------------------------
+// Everything gameplay lives in `state` as plain numbers; the 3D view only reads it.
+let scene, state;
+function mkRider(id, team, role, x, y, z) {
+  return { id, team, role, x, y, z, px: x, py: y, pz: z, yaw: team === 0 ? 0 : Math.PI, pitch: 0, roll: 0,
+    speed: tune.flySpeed * 0.8, stamina: 1, boosting: false, stun: 0, cd: 0, immune: 0, holdT: 0, aiT: 0,
+    sx: x, sy: y, sz: z }; // sx..sz: the seeker's last look at the glimmer
+}
+function reset() {
+  seed = Number(params.get('seed')) || CONFIG.seed;
+  const gd = tune.goalDistance;
+  const R = [
+    mkRider(0, 0, 'chaser', -5, 15, -8), mkRider(1, 0, 'chaser', 7, 17, -16),
+    mkRider(2, 0, 'seeker', 0, 28, -24), mkRider(3, 0, 'keeper', 0, 15, -(gd - 3.5)),
+    mkRider(4, 1, 'chaser', -8, 16, 30), mkRider(5, 1, 'chaser', 9, 15, 38),
+    mkRider(6, 1, 'seeker', 0, 29, 26), mkRider(7, 1, 'keeper', 0, 15, gd - 3.5),
+  ];
+  R[0].immune = tune.kickoffGrace; // the kickoff: time to try the controls with the ball
+  state = {
+    t: 0, score: [0, 0], gained: '', over: false, winner: -1, endReason: '',
+    riders: R, ctrl: 0, seekerLock: false, switchT: 0,
+    charging: false, holdT: 0, actPrev: false, buffer: 0,
+    ball: { x: 0, y: 15, z: 0, px: 0, py: 15, pz: 0, vx: 0, vy: 0, vz: 0, holder: 0, mode: 'held', team: 0,
+      passTo: -1, age: 0, saveTried: false, lastHolder: 0, perfect: false, tried: [] },
+    rumblers: [
+      { x: -26, y: 22, z: 0, px: -26, py: 22, pz: 0, vx: 0, vy: 0, vz: 0, active: false, rest: 0, target: -1, retarget: 0, spin: 0 },
+      { x: 26, y: 22, z: 0, px: 26, py: 22, pz: 0, vx: 0, vy: 0, vz: 0, active: false, rest: 0, target: -1, retarget: 0, spin: 0 },
+    ],
+    glimmer: { active: false, x: 0, y: 25, z: 0, px: 0, py: 25, pz: 0, vx: 0, vy: 0, vz: 0, turnT: 0, dartT: 0, flap: 0 },
+    cam: { x: -5, y: 18, z: -16, px: -5, py: 18, pz: -16, lx: 0, ly: 15, lz: 0, plx: 0, ply: 15, plz: 0, fov: tune.fovBase },
+    msgs: [], flash: { '1': [0, 0, 0], '-1': [0, 0, 0] },
+    tut: 0, tutT: 0, glimmerNote: 0, resultsT: 0,
+    stats: { goals: 0, perfect: 0, steals: 0, hits: 0, saves: 0 },
+  };
+  stick = null;
+}
+const R = () => state.riders;
+function ramp() { return clamp((state.t - tune.laxUntil) / Math.max(1, tune.rampUntil - tune.laxUntil), 0, 1); }
+function msg(text, color = '#fff', dur = 2) {
+  state.msgs.push({ text, color, t: dur, dur });
+  if (state.msgs.length > 3) state.msgs.shift();
+}
+function trailing(team) { return state.score[team] < state.score[1 - team]; }
+
+// ---- Flight --------------------------------------------------------------------------
+/** Moves one rider for a step: self-levelling arcade broom, dive for speed, soft walls. */
+function fly(r, ix, iy, boost, dt, mult) {
+  if (r.stun > 0) { ix = clamp(ix * 0.3 + Math.sin(state.t * 19 + r.id) * 0.7, -1, 1); iy *= 0.3; boost = false; mult *= 0.6; }
+  r.boosting = boost && r.stamina > 0.04;
+  r.stamina = clamp(r.stamina + (r.boosting ? -tune.boostDrain : tune.boostRegen) * dt, 0, 1);
+  r.yaw = wrapAngle(r.yaw - ix * tune.turnRate * dt);
+  r.pitch += (iy * tune.pitchMax - r.pitch) * Math.min(1, tune.pitchResponse * dt);
+  r.roll += (-ix * 0.62 - r.roll) * Math.min(1, 6 * dt);
+  const dive = -Math.sin(r.pitch) / Math.sin(tune.pitchMax);
+  const target = (tune.flySpeed * (r.boosting ? tune.boostMult : 1) + dive * tune.diveGain) * mult;
+  r.speed += (target - r.speed) * Math.min(1, tune.speedResponse * dt);
+  r.speed = Math.max(3, r.speed);
+  const f = fwd(r);
+  r.x += f.x * r.speed * dt; r.y += f.y * r.speed * dt; r.z += f.z * r.speed * dt;
+  bound(r);
+}
+function bound(r) { // walls and ground bounce and slow, never wreck
+  const hw = tune.arenaHalfWidth, hl = tune.arenaHalfLength;
+  if (r.y < tune.floor) { r.y = tune.floor; if (r.pitch < 0) { r.pitch = Math.abs(r.pitch) * 0.4; r.speed *= tune.wallSlow; } }
+  if (r.y > tune.ceiling) { r.y = tune.ceiling; if (r.pitch > 0) r.pitch = -r.pitch * 0.3; }
+  if (Math.abs(r.x) > hw) { r.x = Math.sign(r.x) * hw; r.yaw = wrapAngle(-r.yaw); r.speed *= tune.wallSlow; }
+  if (Math.abs(r.z) > hl) { r.z = Math.sign(r.z) * hl; r.yaw = wrapAngle(Math.PI - r.yaw); r.speed *= tune.wallSlow; }
+}
+/** AI steering: turns the target point into stick input, then flies like the player. */
+function steer(r, tx, ty, tz, dt, mult, boost = false) {
+  const dx = tx - r.x, dy = ty - r.y, dz = tz - r.z, hd = Math.hypot(dx, dz) || 0.001;
+  const dyaw = wrapAngle(Math.atan2(dx, dz) - r.yaw);
+  const ix = clamp(-dyaw * 2.2, -1, 1);
+  const iy = clamp(Math.atan2(dy, hd) / tune.pitchMax * 1.4, -1, 1);
+  fly(r, ix, iy, boost, dt, mult);
+}
+function speedMult(r) {
+  let m = 1;
+  if (r.id !== state.ctrl) m = r.team === 1 ? lerp(tune.aiSpeedLax, tune.aiSpeedFull, ramp()) : tune.mateSpeed;
+  if (r.role === 'seeker') {
+    m *= tune.seekerBoost;
+    if (r.id !== state.ctrl) m *= r.team === 1 ? tune.enemySeekerSkill * lerp(0.8, 1, ramp()) : tune.mateSeekerSkill;
+  }
+  if (trailing(r.team)) m *= tune.catchUpMult;
+  return m;
+}
+
+// ---- The ball: give, pass, shoot ----------------------------------------------------------
+function give(r, how) {
+  const b = state.ball;
+  b.holder = r.id; b.mode = 'held'; b.team = r.team; b.passTo = -1; b.lastHolder = r.id; b.tried = [];
+  r.immune = tune.stealImmunity; r.holdT = 0;
+  if (r.team === 0 && r.role === 'chaser' && !state.seekerLock && state.ctrl !== r.id) { state.ctrl = r.id; state.charging = false; }
+  if (r.id === state.ctrl && state.buffer > 0) { state.charging = true; state.holdT = 0; state.buffer = 0; } // a press just before the catch counts
+  events.push({ type: 'catch', how, rider: r.id, t: state.t });
+  if (how === 'save') { SFX.save(); if (r.team === 0) { msg('선방!', TEAMS[0].css); state.stats.saves++; } else msg('상대 골키퍼가 막았다', TEAMS[1].css); }
+  else if (how === 'steal') { SFX.steal(); }
+  else if (how === 'intercept') { SFX.steal(); msg(r.team === 1 ? '패스를 가로채였다!' : '패스를 가로챘다!', TEAMS[r.team].css); }
+  else if (r.team === 0) SFX.catch();
+}
+function release(r) {
+  const b = state.ball; b.holder = -1; b.age = 0; b.lastHolder = r.id; b.team = r.team; b.saveTried = false; b.tried = [];
+  const f = fwd(r); b.x = r.x + f.x * 1.6; b.y = r.y + f.y * 1.6; b.z = r.z + f.z * 1.6;
+}
+function passTarget(r) {
+  const f = fwd(r); let best = null, bs = -1e9;
+  for (const m of R()) {
+    if (m === r || m.team !== r.team || m.role !== 'chaser' || m.stun > 0) continue;
+    const dx = m.x - r.x, dy = m.y - r.y, dz = m.z - r.z, d = Math.hypot(dx, dy, dz) || 1;
+    const ang = Math.acos(clamp((dx * f.x + dy * f.y + dz * f.z) / d, -1, 1));
+    const s = (ang < tune.passCone ? 100 : 0) - ang * 20 - d * 0.3;
+    if (s > bs) { bs = s; best = m; }
+  }
+  return best;
+}
+function pass(r, to) {
+  const b = state.ball; release(r);
+  b.mode = 'pass'; b.passTo = to.id;
+  const d = norm(to.x - b.x, to.y - b.y, to.z - b.z);
+  b.vx = d.x * tune.passSpeed; b.vy = d.y * tune.passSpeed; b.vz = d.z * tune.passSpeed;
+  events.push({ type: 'pass', from: r.id, to: to.id, t: state.t });
+  if (r.team === 0) SFX.pass();
+}
+function shoot(r, dir, speed, perfect) {
+  const b = state.ball; release(r);
+  b.mode = 'shot'; b.perfect = perfect;
+  b.vx = dir.x * speed; b.vy = dir.y * speed; b.vz = dir.z * speed;
+  events.push({ type: 'shot', from: r.id, speed, perfect, t: state.t });
+  if (r.team === 0 || dist(r, R()[state.ctrl]) < 30) SFX.shot(perfect);
+}
+/** The shot direction: straight ahead, bent toward the nearest hoop when it is close to the aim. */
+function aimShot(r, assist) {
+  const f = fwd(r); let best = null, ba = 1e9;
+  for (const h of hoops(TEAMS[r.team].dir)) {
+    const dx = h.x - r.x, dy = h.y - r.y, dz = h.z - r.z, d = Math.hypot(dx, dy, dz) || 1;
+    const ang = Math.acos(clamp((dx * f.x + dy * f.y + dz * f.z) / d, -1, 1));
+    if (ang < ba) { ba = ang; best = norm(dx, dy, dz); }
+  }
+  return best && ba < assist ? best : f;
+}
+function tryTackle(r, chance) {
+  const b = state.ball;
+  if (b.holder < 0 || r.cd > 0 || r.stun > 0) return false;
+  const c = R()[b.holder];
+  if (c.team === r.team || c.role === 'keeper' || dist(r, c) > tune.tackleRange) return false;
+  r.cd = tune.tackleCooldown;
+  if (c.immune > 0) return true;
+  const mine = r.id === state.ctrl || c.id === state.ctrl;
+  if (rng() < chance) {
+    give(r, 'steal'); c.stun = 0.45;
+    if (r.team === 0) { state.stats.steals++; if (mine) msg('빼앗았다!', TEAMS[0].css); }
+    else if (mine) msg('공을 빼앗겼다!', TEAMS[1].css);
+  } else {
+    c.immune = 0.35;
+    if (mine) { SFX.miss(); msg(r.team === 0 ? '빗나갔다' : '지켜냈다!', '#ffe9c4', 1.2); }
+  }
+  return true;
+}
+function goal(side, i) {
+  const team = side === 1 ? 0 : 1; // the team that attacks this end
+  state.score[team] += tune.goalPoints;
+  state.flash[String(side)][i] = 1.6;
+  events.push({ type: 'goal', team, hoop: i, t: state.t });
+  const shooter = R()[state.ball.lastHolder];
+  if (team === 0) { state.stats.goals++; SFX.goal(); msg(state.ball.perfect ? '완벽한 골! +' + tune.goalPoints : '골! +' + tune.goalPoints, TEAMS[0].css, 2.4); }
+  else { SFX.conceded(); msg('실점... 폭풍까마귀 +' + tune.goalPoints, TEAMS[1].css, 2.2); }
+  if (shooter && shooter.team === 0 && state.tut === 2) state.tut = 3;
+  const keeper = R().find(k => k.role === 'keeper' && k.team !== team);
+  give(keeper, 'restart'); keeper.holdT = -tune.resetDelay;
+}
+
+function updateBall(dt) {
+  const b = state.ball, riders = R();
+  if (b.holder >= 0) {
+    const h = riders[b.holder], f = fwd(h);
+    b.x = h.x + f.x * 1.3; b.y = h.y + f.y * 1.3 - 0.25; b.z = h.z + f.z * 1.3;
+    b.vx = f.x * h.speed; b.vy = f.y * h.speed; b.vz = f.z * h.speed;
+    return;
+  }
+  b.age += dt;
+  if (b.mode === 'pass') {
+    const t = riders[b.passTo];
+    const d = norm(t.x - b.x, t.y - b.y, t.z - b.z), k = Math.min(1, 7 * dt);
+    b.vx = lerp(b.vx, d.x * tune.passSpeed, k); b.vy = lerp(b.vy, d.y * tune.passSpeed, k); b.vz = lerp(b.vz, d.z * tune.passSpeed, k);
+    if (b.age > 2.4) b.mode = 'free';
+  } else if (b.mode === 'shot') {
+    if (b.age > 1.7) b.mode = 'free';
+  } else {
+    b.vy -= tune.ballGravity * dt;
+    const k = Math.max(0, 1 - tune.ballDrag * dt); b.vx *= k; b.vy *= k; b.vz *= k;
+  }
+  const ox = b.x, oy = b.y, oz = b.z;
+  b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
+  // through a hoop?
+  for (const side of [1, -1]) {
+    const gz = side * tune.goalDistance;
+    if ((oz - gz) * (b.z - gz) <= 0 && oz !== b.z) {
+      const u = (gz - oz) / (b.z - oz), cx = ox + (b.x - ox) * u, cy = oy + (b.y - oy) * u;
+      const hs = hoops(side);
+      for (let i = 0; i < 3; i++) if (Math.hypot(cx - hs[i].x, cy - hs[i].y) < tune.hoopRadius) { goal(side, i); return; }
+    }
+  }
+  // the arena
+  const hw = tune.arenaHalfWidth + 2, hl = tune.arenaHalfLength + 2;
+  if (b.y < 0.6) { b.y = 0.6; b.vy = Math.abs(b.vy) * 0.45; b.vx *= 0.8; b.vz *= 0.8; if (b.mode !== 'pass') b.mode = 'free'; }
+  if (b.y > tune.ceiling + 6) { b.y = tune.ceiling + 6; b.vy = -Math.abs(b.vy) * 0.5; }
+  if (Math.abs(b.x) > hw) { b.x = Math.sign(b.x) * hw; b.vx = -b.vx * 0.6; b.mode = 'free'; }
+  if (Math.abs(b.z) > hl) { b.z = Math.sign(b.z) * hl; b.vz = -b.vz * 0.6; b.mode = 'free'; }
+  // catches
+  for (const r of riders) {
+    if (r.stun > 0 || r.role === 'seeker') continue;
+    const d = dist(r, b);
+    if (b.mode === 'shot') {
+      if (r.role === 'keeper' && r.team !== b.team && !b.saveTried && d < tune.keeperReach) {
+        b.saveTried = true;
+        const chance = r.team === 1 ? lerp(tune.keeperSaveLax, tune.keeperSaveFull, ramp()) : tune.mateKeeperSave;
+        if (rng() < chance * (b.perfect ? 0.45 : 1)) { give(r, 'save'); return; }
+      }
+      continue;
+    }
+    if (b.mode === 'pass') {
+      if (r.id === b.passTo && d < tune.catchRadius * 1.4) { give(r, 'pass'); return; }
+      if (r.team !== b.team && d < tune.catchRadius && !b.tried.includes(r.id)) {
+        b.tried.push(r.id);
+        const chance = r.team === 1 ? tune.interceptFull * ramp() : 0.3;
+        if (rng() < chance) { give(r, 'intercept'); return; }
+      }
+      continue;
+    }
+    if (d < tune.catchRadius && !(r.id === b.lastHolder && b.age < 0.5)) { give(r, 'loose'); return; }
+  }
+}
+
+// ---- Rumblers ------------------------------------------------------------------------
+function pickTarget(rb, i) {
+  const riders = R(), b = state.ball, ctrl = riders[state.ctrl];
+  if (state.t < tune.laxUntil && i === 0 && ctrl.stun <= 0) return ctrl.id; // the first one comes for you, slowly
+  if (b.holder >= 0) {
+    const h = riders[b.holder];
+    if (h.role !== 'keeper' && (h.team === 0 ? rng() < 0.4 + tune.rumblerHomeBias * ramp() : rng() < 0.55)) return h.id;
+  }
+  const pool = riders.filter(r => r.role !== 'keeper' && r.stun <= 0);
+  return pool[Math.floor(rng() * pool.length)].id;
+}
+function updateRumblers(dt) {
+  const riders = R(), b = state.ball;
+  const sp = lerp(tune.rumblerSpeedStart, tune.rumblerSpeedEnd, clamp(state.t / tune.rampUntil, 0, 1));
+  state.rumblers.forEach((rb, i) => {
+    if (!rb.active) {
+      if (state.t >= (i === 0 ? tune.rumblerFirstAt : tune.rumblerSecondAt)) { rb.active = true; rb.vy = 4; events.push({ type: 'rumbler', i, t: state.t }); }
+      return;
+    }
+    rb.spin += dt * 6;
+    if (rb.rest > 0) {
+      rb.rest -= dt; const k = Math.max(0, 1 - 1.3 * dt); rb.vx *= k; rb.vy *= k; rb.vz *= k;
+    } else {
+      rb.retarget -= dt;
+      if (rb.retarget <= 0 || rb.target < 0 || riders[rb.target].stun > 0) { rb.target = pickTarget(rb, i); rb.retarget = 2.2; }
+      const tg = riders[rb.target];
+      const want = norm(tg.x - rb.x, tg.y - rb.y, tg.z - rb.z);
+      const cur = Math.hypot(rb.vx, rb.vy, rb.vz) > 0.5 ? norm(rb.vx, rb.vy, rb.vz) : want;
+      const k = Math.min(1, tune.rumblerTurn * dt);
+      const d = norm(lerp(cur.x, want.x, k), lerp(cur.y, want.y, k), lerp(cur.z, want.z, k));
+      rb.vx = d.x * sp; rb.vy = d.y * sp; rb.vz = d.z * sp;
+    }
+    rb.x += rb.vx * dt; rb.y += rb.vy * dt; rb.z += rb.vz * dt;
+    const hw = tune.arenaHalfWidth, hl = tune.arenaHalfLength;
+    if (rb.y < 1.5) { rb.y = 1.5; rb.vy = Math.abs(rb.vy); }
+    if (rb.y > tune.ceiling) { rb.y = tune.ceiling; rb.vy = -Math.abs(rb.vy); }
+    if (Math.abs(rb.x) > hw) { rb.x = Math.sign(rb.x) * hw; rb.vx = -rb.vx; }
+    if (Math.abs(rb.z) > hl) { rb.z = Math.sign(rb.z) * hl; rb.vz = -rb.vz; }
+    if (rb.rest > 0) return;
+    for (const r of riders) {
+      if (r.stun > 0 || r.role === 'keeper') continue;
+      if (dist(r, rb) < tune.rumblerRadius + 0.6) {
+        r.stun = tune.stunTime; state.stats.hits += r.team === 0 ? 1 : 0;
+        events.push({ type: 'hit', rider: r.id, t: state.t });
+        const near = dist(r, riders[state.ctrl]) < 40;
+        if (near) SFX.thud();
+        if (b.holder === r.id) {
+          release(r); b.mode = 'free';
+          const f = fwd(r); b.vx = f.x * r.speed * 0.4 + (rng() - 0.5) * 8; b.vy = 4 + rng() * 3; b.vz = f.z * r.speed * 0.4 + (rng() - 0.5) * 8;
+          if (r.team === 1) msg('상대가 럼블러에 맞아 공을 놓쳤다!', TEAMS[0].css);
+        }
+        if (r.id === state.ctrl) { msg('럼블러에 맞았다!', '#ff8a5c'); state.charging = false; }
+        rb.vx = -rb.vx * 0.5; rb.vy = 6; rb.vz = -rb.vz * 0.5; rb.rest = tune.rumblerRest; rb.target = -1;
+        break;
+      }
+    }
+  });
+}
+
+// ---- The glimmer ---------------------------------------------------------------------
+function updateGlimmer(dt) {
+  const g = state.glimmer, riders = R();
+  if (!g.active) {
+    if (state.t >= tune.glimmerAt) {
+      g.active = true; g.x = (rng() - 0.5) * 40; g.y = 26; g.z = (rng() - 0.5) * 50; g.px = g.x; g.py = g.y; g.pz = g.z;
+      g.turnT = 0; state.glimmerNote = 4.5; SFX.bell(); events.push({ type: 'glimmer', t: state.t });
+      msg('글리머 등장!', '#ffe27a', 3);
+    }
+    return;
+  }
+  g.flap += dt * 30;
+  g.turnT -= dt; g.dartT -= dt;
+  let want = norm(g.vx, g.vy, g.vz);
+  if (g.turnT <= 0) {
+    const yaw = rng() * TAU; let pitch = (rng() - 0.5) * 0.9;
+    if (g.y > tune.ceiling - 8) pitch = -Math.abs(pitch) - 0.2;
+    if (g.y < 9) pitch = Math.abs(pitch) + 0.2;
+    want = { x: Math.sin(yaw) * Math.cos(pitch), y: Math.sin(pitch), z: Math.cos(yaw) * Math.cos(pitch) };
+    g.wx = want.x; g.wy = want.y; g.wz = want.z;
+    g.turnT = tune.glimmerTurnEvery * (0.5 + rng());
+  } else if (g.wx !== undefined) want = { x: g.wx, y: g.wy, z: g.wz };
+  // dart away from a close seeker
+  for (const r of riders) {
+    if (r.role !== 'seeker') continue;
+    const d = dist(r, g);
+    if (d < tune.glimmerFlee && g.dartT <= 0) {
+      const a = norm(g.x - r.x, g.y - r.y, g.z - r.z), side = rng() < 0.5 ? -1 : 1;
+      const w = norm(a.x + a.z * side * 0.9, a.y + (rng() - 0.5) * 0.8, a.z - a.x * side * 0.9);
+      g.wx = w.x; g.wy = w.y; g.wz = w.z; g.dartT = 0.6; g.turnT = 0.9;
+    }
+    if (d < tune.glimmerCatch && r.stun <= 0) { catchGlimmer(r); return; }
+  }
+  const sp = tune.glimmerSpeed * (g.dartT > 0 ? tune.glimmerDart : 1);
+  const k = Math.min(1, (g.dartT > 0 ? 9 : 3.5) * dt);
+  g.vx = lerp(g.vx, want.x * sp, k); g.vy = lerp(g.vy, want.y * sp, k); g.vz = lerp(g.vz, want.z * sp, k);
+  g.x += g.vx * dt; g.y += g.vy * dt; g.z += g.vz * dt;
+  const hw = tune.arenaHalfWidth - 3, hl = tune.arenaHalfLength - 3;
+  if (Math.abs(g.x) > hw) { g.x = Math.sign(g.x) * hw; g.vx = -g.vx; if (g.wx !== undefined) g.wx = -g.wx; }
+  if (Math.abs(g.z) > hl) { g.z = Math.sign(g.z) * hl; g.vz = -g.vz; if (g.wz !== undefined) g.wz = -g.wz; }
+  if (g.y < tune.floor + 3) { g.y = tune.floor + 3; g.vy = Math.abs(g.vy); if (g.wy !== undefined) g.wy = Math.abs(g.wy); }
+  if (g.y > tune.ceiling - 2) { g.y = tune.ceiling - 2; g.vy = -Math.abs(g.vy); if (g.wy !== undefined) g.wy = -Math.abs(g.wy); }
+}
+function catchGlimmer(r) {
+  state.score[r.team] += tune.glimmerPoints;
+  events.push({ type: 'glimmerCaught', team: r.team, t: state.t });
+  finish(r.team === 0 ? 'mine' : 'theirs');
+}
+function finish(reason) {
+  const [a, b] = state.score;
+  state.over = true; state.endReason = reason; state.winner = a > b ? 0 : b > a ? 1 : -1;
+  const head = state.winner === 0 ? '승리!' : state.winner === 1 ? '패배' : '무승부';
+  const how = reason === 'mine' ? '우리 추격수가 글리머를 잡았다' : reason === 'theirs' ? '상대 추격수가 글리머를 잡았다' : '시간 종료';
+  state.gained = `${head}  ${how}`;
+  state.resultsT = 0;
+  events.push({ type: 'end', winner: state.winner, reason, score: [a, b], t: state.t });
+  if (state.winner === 0) SFX.win(); else SFX.lose();
+  scene = 'results';
+}
+
+// ---- AI ------------------------------------------------------------------------------
+function aiChaser(r, dt) {
+  const b = state.ball, riders = R(), side = TEAMS[r.team].dir, gd = tune.goalDistance;
+  const m = speedMult(r);
+  const mates = riders.filter(o => o.team === r.team && o.role === 'chaser' && o !== r);
+  const foes = riders.filter(o => o.team !== r.team && o.role === 'chaser');
+  if (b.holder === r.id) { // carry it to the hoops
+    r.holdT += dt;
+    const keeper = riders.find(o => o.role === 'keeper' && o.team !== r.team);
+    const hs = hoops(side); let h = hs[0], far = -1;
+    for (const c of hs) { const d = Math.hypot(c.x - keeper.x, c.y - keeper.y); if (d > far) { far = d; h = c; } }
+    const dGoal = dist(r, h);
+    const pressed = foes.some(o => dist(o, r) < 7);
+    const ahead = mates.find(o => o.stun <= 0 && (o.z - r.z) * side > 5);
+    if (r.holdT > 0.9 && pressed && ahead) { pass(r, ahead); return; }
+    if (dGoal < tune.aiShootRange) {
+      const f = fwd(r), to = norm(h.x - r.x, h.y - r.y, h.z - r.z);
+      if (f.x * to.x + f.y * to.y + f.z * to.z > Math.cos(0.5)) {
+        const e = tune.aiAimError;
+        const aim = norm(h.x + (rng() - 0.5) * 2 * e - r.x, h.y + (rng() - 0.5) * 2 * e - r.y, h.z - r.z);
+        shoot(r, aim, lerp(tune.shotMin, tune.shotMax, 0.5 + rng() * 0.5), false); return;
+      }
+      steer(r, h.x, h.y, h.z, dt, m); return;
+    }
+    steer(r, h.x * 0.6, lerp(r.y, h.y, 0.5), side * (gd - 16), dt, m, dGoal > 45 && r.stamina > 0.5); return;
+  }
+  const carrier = b.holder >= 0 ? riders[b.holder] : null;
+  const nearestToBall = [r, ...mates].filter(o => o.id !== state.ctrl).sort((p, q) => dist(p, b) - dist(q, b))[0];
+  if (b.mode === 'pass' && b.passTo === r.id) { steer(r, b.x, b.y, b.z, dt, m); return; }
+  if (carrier && carrier.team === r.team) { // support: ahead and to the side
+    const off = r.id % 2 ? 11 : -11;
+    steer(r, clamp(carrier.x + off, -25, 25), clamp(carrier.y + 2, 8, 30), clamp(carrier.z + side * 14, -gd + 4, gd - 4), dt, m); return;
+  }
+  if (carrier && carrier.team !== r.team && carrier.role !== 'keeper') { // press or drop back
+    const chaser = foes.length ? [r, ...mates].filter(o => o.id !== state.ctrl).sort((p, q) => dist(p, carrier) - dist(q, carrier))[0] : r;
+    if (chaser === r) {
+      const lead = 0.5;
+      steer(r, carrier.x + carrier.vxL * lead, carrier.y, carrier.z + carrier.vzL * lead, dt, m, dist(r, carrier) > 14 && r.stamina > 0.4);
+      if (dist(r, carrier) < tune.tackleRange) tryTackle(r, r.team === 1 ? lerp(tune.aiTackleLax, tune.aiTackleFull, ramp()) : 0.35);
+      return;
+    }
+    const own = -side * gd;
+    steer(r, carrier.x * 0.5, lerp(15, carrier.y, 0.5), lerp(own, carrier.z, 0.45), dt, m); return;
+  }
+  if (carrier && carrier.role === 'keeper') { // a restart: spread out ahead of the keeper
+    const off = r.id % 2 ? 12 : -12;
+    steer(r, off, 16, carrier.team === r.team ? -side * gd * 0.55 : 0, dt, m); return;
+  }
+  if (nearestToBall === r) { steer(r, b.x, b.y, b.z, dt, m, dist(r, b) > 12 && r.stamina > 0.3); return; }
+  steer(r, (r.id % 2 ? 10 : -10), 17, b.z * 0.6, dt, m);
+}
+function aiSeeker(r, dt) {
+  const g = state.glimmer, m = speedMult(r);
+  if (!g.active) { // circle high over the pitch, watching
+    const a = state.t * 0.35 + r.team * Math.PI;
+    steer(r, Math.cos(a) * 18, 30, Math.sin(a) * 30 + TEAMS[r.team].dir * -8, dt, m * 0.85); return;
+  }
+  r.aiT -= dt;
+  if (r.aiT <= 0) { r.sx = g.x; r.sy = g.y; r.sz = g.z; r.aiT = r.team === 1 ? 0.5 : 0.7; } // a late look: darts shake it off
+  const d = Math.hypot(r.sx - r.x, r.sy - r.y, r.sz - r.z);
+  steer(r, r.sx, r.sy, r.sz, dt, m, d > 10 && r.stamina > 0.25);
+}
+function keeperUpdate(r, dt) {
+  const b = state.ball, side = -TEAMS[r.team].dir, gd = tune.goalDistance;
+  let gx = clamp(b.x * 0.3, -9, 9), gy = clamp(lerp(15, b.y, 0.35), 11, 20), gz = side * (gd - 3.5), sp = 10;
+  if (b.holder === r.id) {
+    gx = 0; gy = 15; r.holdT += dt; r.immune = 1;
+    if (r.holdT > 1.0) { // put it back in play
+      const mates = R().filter(o => o.team === r.team && o.role === 'chaser' && o.stun <= 0);
+      if (mates.length) {
+        let to = mates[0];
+        if (r.team === 0) to = mates.find(o => o.id === state.ctrl) || mates.sort((p, q) => dist(p, r) - dist(q, r))[0];
+        else to = mates.sort((p, q) => (q.z - p.z) * -side)[0]; // the one furthest up the pitch
+        pass(r, to);
+      }
+    }
+  } else if (b.mode === 'shot' && b.team !== r.team && dist(r, b) < 20) { gx = b.x; gy = b.y; sp = 16; }
+  const dx = gx - r.x, dy = gy - r.y, dz = gz - r.z, d = Math.hypot(dx, dy, dz);
+  const mv = Math.min(d, sp * dt);
+  if (d > 0.01) { r.x += dx / d * mv; r.y += dy / d * mv; r.z += dz / d * mv; }
+  r.speed = mv / dt; r.yaw = Math.atan2(b.x - r.x, b.z - r.z); r.pitch = 0; r.roll = clamp(-dx * 0.08, -0.4, 0.4);
+}
+
+// ---- Who you fly ---------------------------------------------------------------------
+function nearestHomeChaser() {
+  const b = state.ball;
+  return R().filter(r => r.team === 0 && r.role === 'chaser').sort((p, q) => dist(p, b) - dist(q, b))[0];
+}
+function updateControl(dt) {
+  const riders = R(), b = state.ball, g = state.glimmer;
+  if (pressed('Tab')) {
+    if (!g.active) msg('글리머는 아직 나타나지 않았어요', '#ffe9c4', 1.6);
+    else { state.seekerLock = !state.seekerLock; state.charging = false; state.ctrl = state.seekerLock ? 2 : nearestHomeChaser().id; }
+  }
+  if (pressed('KeyE')) { state.seekerLock = false; state.charging = false; state.ctrl = nearestHomeChaser().id; }
+  if (state.seekerLock) { state.ctrl = 2; return; }
+  const holder = b.holder >= 0 ? riders[b.holder] : null;
+  if (holder && holder.team === 0 && holder.role === 'chaser') { state.ctrl = holder.id; return; }
+  if (b.mode === 'pass' && b.team === 0) return;
+  state.switchT -= dt;
+  if (state.switchT <= 0) {
+    state.switchT = tune.switchEvery;
+    const n = nearestHomeChaser(), cur = riders[state.ctrl];
+    if (cur.role !== 'chaser' || (n !== cur && dist(n, b) < dist(cur, b) - 4)) { state.ctrl = n.id; state.charging = false; }
+  }
+}
+function readInput() {
+  let ix = 0, iy = 0;
+  if (down.has('ArrowLeft') || down.has('KeyA')) ix -= 1;
+  if (down.has('ArrowRight') || down.has('KeyD')) ix += 1;
+  if (down.has('ArrowUp') || down.has('KeyW')) iy += 1;
+  if (down.has('ArrowDown') || down.has('KeyS')) iy -= 1;
+  const s = stickAxes(); ix += s.x; iy += s.y;
+  return { ix: clamp(ix, -1, 1), iy: clamp(iy, -1, 1), boost: down.has('ShiftLeft') || down.has('ShiftRight'), act: down.has('Space') };
+}
+function playerAct(r, inp, dt) {
+  const b = state.ball, has = b.holder === r.id;
+  const pressedNow = inp.act && !state.actPrev, releasedNow = !inp.act && state.actPrev;
+  state.actPrev = inp.act;
+  state.buffer = Math.max(0, state.buffer - dt);
+  if (has) {
+    if (pressedNow) { state.charging = true; state.holdT = 0; }
+    if (state.charging && inp.act) state.holdT += dt;
+    if (state.charging && releasedNow) {
+      state.charging = false;
+      if (state.holdT < tune.tapTime) {
+        const to = passTarget(r);
+        if (to) { pass(r, to); if (state.tut === 1) state.tut = 2; }
+        else shoot(r, fwd(r), tune.shotMin * 0.6, false);
+      } else {
+        const c = clamp(state.holdT / tune.chargeTime, 0, 1);
+        const perfect = c >= tune.sweetFrom && c <= tune.sweetTo;
+        const speed = lerp(tune.shotMin, tune.shotMax, c) * (perfect ? tune.sweetBonus : 1);
+        shoot(r, aimShot(r, perfect ? tune.sweetAssist : tune.aimAssist), speed, perfect);
+        if (perfect) { SFX.perfect(); msg('완벽한 슛!', '#ffe27a', 1.4); state.stats.perfect++; }
+        if (state.tut <= 2) state.tut = 3;
+      }
+    }
+  } else {
+    state.charging = false;
+    if (pressedNow && !tryTackle(r, tune.playerTackleChance)) state.buffer = 0.25;
+  }
+}
+
+// ---- The step ------------------------------------------------------------------------
+function updateMatch(dt) {
+  const riders = R();
+  state.t += dt;
+  for (const e of [...riders, state.ball, ...state.rumblers, state.glimmer]) { e.px = e.x; e.py = e.y; e.pz = e.z; }
+  for (const r of riders) { r.vxL = (r.x - (r.lx ?? r.x)) / dt; r.vzL = (r.z - (r.lz ?? r.z)) / dt; r.lx = r.x; r.lz = r.z; }
+  updateControl(dt);
+  const inp = readInput(), me = riders[state.ctrl];
+  for (const r of riders) {
+    r.stun = Math.max(0, r.stun - dt); r.cd = Math.max(0, r.cd - dt); r.immune = Math.max(0, r.immune - dt);
+    if (r.role === 'keeper') keeperUpdate(r, dt);
+    else if (r === me) fly(r, inp.ix, inp.iy, inp.boost, dt, speedMult(r));
+    else if (r.role === 'seeker') aiSeeker(r, dt);
+    else aiChaser(r, dt);
+  }
+  playerAct(me, inp, dt);
+  updateBall(dt);
+  updateRumblers(dt);
+  if (!state.over) updateGlimmer(dt);
+  // the first minute teaches by doing
+  state.tutT += dt;
+  if (state.tut === 0 && (Math.abs(inp.ix) > 0.3 || Math.abs(inp.iy) > 0.3)) { state.tutMove = (state.tutMove || 0) + dt; if (state.tutMove > 1.2) state.tut = 1; }
+  if (state.tut === 3 && inp.boost) { state.tutBoost = (state.tutBoost || 0) + dt; if (state.tutBoost > 1.5) state.tut = 4; }
+  state.glimmerNote = Math.max(0, state.glimmerNote - dt);
+  for (const k of ['1', '-1']) state.flash[k] = state.flash[k].map(v => Math.max(0, v - dt));
+  state.msgs.forEach(m => m.t -= dt); state.msgs = state.msgs.filter(m => m.t > 0);
+  updateCamera(dt);
+  if (!state.over && state.t >= tune.matchTime) finish('time');
+}
+function updateCamera(dt) {
+  const c = state.cam, r = R()[state.ctrl];
+  c.px = c.x; c.py = c.y; c.pz = c.z; c.plx = c.lx; c.ply = c.ly; c.plz = c.lz;
+  const bx = Math.sin(r.yaw), bz = Math.cos(r.yaw), f = fwd(r);
+  const tx = r.x - bx * tune.camDistance, tz = r.z - bz * tune.camDistance;
+  const ty = Math.max(1, r.y + tune.camHeight - Math.sin(r.pitch) * 2.5);
+  const k = 1 - Math.exp(-7 * dt), kl = 1 - Math.exp(-10 * dt);
+  c.x = lerp(c.x, tx, k); c.y = lerp(c.y, ty, k); c.z = lerp(c.z, tz, k);
+  c.lx = lerp(c.lx, r.x + f.x * 10, kl); c.ly = lerp(c.ly, r.y + f.y * 10 + 0.8, kl); c.lz = lerp(c.lz, r.z + f.z * 10, kl);
+  const sp = clamp((r.speed - tune.flySpeed) / (tune.flySpeed * 0.8), 0, 1);
+  c.fov = lerp(c.fov, tune.fovBase + tune.fovSpeed * sp, Math.min(1, 3 * dt));
+}
+
+// ---- The 3D view ---------------------------------------------------------------------
+let V = null;
+function glowTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.3, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function toon(color, extra = {}) { return new THREE.MeshToonMaterial({ color, ...extra }); }
+function basic(color, extra = {}) { return new THREE.MeshBasicMaterial({ color, ...extra }); }
+function glowSprite(tex, color, size, opacity = 1) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }));
+  s.scale.set(size, size, 1); return s;
+}
+/** A rider on a broom. The team sets the headgear and cape, the role sets the build. */
+function makeRider(team, role, tex) {
+  const T = TEAMS[team], g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const robe = toon(T.robe), trim = toon(T.trim), skin = toon(0xf1c49d), wood = toon(0x6e4224);
+  const bulk = role === 'keeper' ? 1.2 : role === 'seeker' ? 0.82 : 1;
+  // broom: a long handle along +z, bristles at the back
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 2.8, 6), wood); stick.rotation.x = Math.PI / 2; stick.position.z = 0.2; g.add(stick);
+  const bristle = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.0, 8, 1, true), toon(0xd9b264, { side: THREE.DoubleSide })); bristle.rotation.x = -Math.PI / 2; bristle.position.z = -1.55; g.add(bristle);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.12, 8), trim); band.rotation.x = Math.PI / 2; band.position.z = -1.0; g.add(band);
+  // body, seated, leaning in
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24 * bulk, 0.36 * bulk, 0.85, 8), robe); torso.position.set(0, 0.5, -0.2); torso.rotation.x = 0.35; body.add(torso);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), skin); head.position.set(0, 1.05, 0.02); body.add(head);
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.7), robe); leg.position.set(s * 0.2, 0.05, 0.1); body.add(leg);
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.2, 0.26), toon(0x3a2a24)); boot.position.set(s * 0.2, -0.05, 0.5); body.add(boot);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.6, 6), robe); arm.position.set(s * 0.24 * bulk, 0.55, 0.25); arm.rotation.x = 1.2; body.add(arm);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(role === 'keeper' ? 0.2 : 0.08, 8, 6), role === 'keeper' ? trim : skin);
+    hand.position.set(s * 0.2 * bulk, 0.42, 0.55); body.add(hand);
+  }
+  if (team === 0) { // 등불매: a rounded hood and short hawk-wing cape
+    const hood = new THREE.Mesh(new THREE.SphereGeometry(0.29, 12, 8, 0, TAU, 0, Math.PI * 0.62), robe); hood.position.set(0, 1.07, -0.03); hood.rotation.x = -0.35; body.add(hood);
+    const crest = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.3, 6), trim); crest.position.set(0, 1.36, -0.12); crest.rotation.x = -0.8; body.add(crest);
+  } else {          // 폭풍까마귀: a beaked mask and a high feather collar
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.42, 6), toon(0x23232e)); beak.rotation.x = Math.PI / 2; beak.position.set(0, 1.0, 0.36); body.add(beak);
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 3), toon(0x13302f)); hat.position.set(0, 1.42, -0.02); body.add(hat);
+    for (let i = -2; i <= 2; i++) {
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.38, 4), toon(0x10292a)); f.position.set(i * 0.1, 0.92, -0.32); f.rotation.x = -0.5; f.rotation.z = i * 0.25; body.add(f);
+    }
+  }
+  if (role === 'keeper') { // big round shoulder pads
+    for (const s of [-1, 1]) { const pad = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), trim); pad.scale.set(1, 0.7, 1); pad.position.set(s * 0.38, 0.8, -0.1); body.add(pad); }
+  }
+  if (role === 'seeker') { // goggles and a long streaming scarf
+    for (const s of [-1, 1]) { const gg = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.025, 6, 12), toon(0xe8c25a)); gg.position.set(s * 0.09, 1.08, 0.24); body.add(gg); }
+  }
+  if (role === 'chaser') { // bracers and a sash
+    const sash = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.05, 6, 14), trim); sash.position.set(0, 0.55, -0.2); sash.rotation.x = Math.PI / 2 + 0.35; body.add(sash);
+  }
+  // the cape (or scarf) flaps behind
+  const shape = new THREE.Shape();
+  if (role === 'seeker') { shape.moveTo(-0.08, 0); shape.lineTo(0.08, 0); shape.lineTo(0.05, -2.2); shape.lineTo(-0.05, -2.0); }
+  else if (team === 0) { shape.moveTo(-0.34, 0); shape.lineTo(0.34, 0); shape.quadraticCurveTo(0.7, -0.7, 0.45, -1.2); shape.lineTo(0, -0.95); shape.lineTo(-0.45, -1.2); shape.quadraticCurveTo(-0.7, -0.7, -0.34, 0); }
+  else { shape.moveTo(-0.34, 0); shape.lineTo(0.34, 0); for (let i = 0; i <= 6; i++) shape.lineTo(0.42 - i * 0.14, i % 2 ? -1.0 : -1.3); }
+  const cape = new THREE.Mesh(new THREE.ShapeGeometry(shape), toon(role === 'seeker' ? T.trim : T.robe, { side: THREE.DoubleSide }));
+  const capePivot = new THREE.Group(); capePivot.position.set(0, 0.95, -0.32); capePivot.add(cape); cape.rotation.x = 0; body.add(capePivot);
+  capePivot.rotation.x = -1.2;
+  // a soft trail when the catch-up bonus is on
+  const bonus = glowSprite(tex, T.robe, 1.6, 0.0); bonus.position.z = -2.0; g.add(bonus);
+  g.userData = { capePivot, bonus, body };
+  return g;
+}
+function makeBall() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.45, 14, 12), toon(0xb3332a)));
+  for (const r of [0, Math.PI / 2]) { const s = new THREE.Mesh(new THREE.TorusGeometry(0.455, 0.03, 6, 24), toon(0xf3dcb4)); s.rotation.y = r; g.add(s); }
+  return g;
+}
+function makeRumbler(tex) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 1), toon(0x26222c)));
+  const spikes = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+  for (const [x, y, z] of spikes) {
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.45, 6), toon(0x4a4452));
+    c.position.set(x * 0.8, y * 0.8, z * 0.8); c.lookAt(x * 3, y * 3, z * 3); c.rotateX(Math.PI / 2); g.add(c);
+  }
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.09, 8, 28), basic(0xff7a2a)); g.add(ring);
+  g.add(glowSprite(tex, 0xff6a20, 3.6, 0.55));
+  g.userData = { ring };
+  return g;
+}
+function makeGlimmer(tex) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.26, 14, 10), basic(0xffd24a)));
+  const wingShape = new THREE.Shape(); wingShape.moveTo(0, 0); wingShape.quadraticCurveTo(0.5, 0.45, 1.05, 0.25); wingShape.quadraticCurveTo(0.6, 0.0, 0.95, -0.15); wingShape.quadraticCurveTo(0.45, -0.1, 0, 0);
+  const wingMat = basic(0xfff1bf, { side: THREE.DoubleSide, transparent: true, opacity: 0.92 });
+  const wl = new THREE.Mesh(new THREE.ShapeGeometry(wingShape), wingMat), wr = new THREE.Mesh(new THREE.ShapeGeometry(wingShape), wingMat);
+  wr.scale.x = -1; const pl = new THREE.Group(), pr = new THREE.Group(); pl.position.x = 0.15; pr.position.x = -0.15; pl.add(wl); pr.add(wr); g.add(pl, pr);
+  g.add(glowSprite(tex, 0xffcc44, 3.2, 0.85));
+  g.userData = { pl, pr };
+  return g;
+}
+function makeHoop(tex) {
+  const g = new THREE.Group();
+  const gold = toon(0xe5ac45), pole = toon(0x5a3a2a);
+  g.add(new THREE.Mesh(new THREE.TorusGeometry(tune.hoopRadius, 0.26, 10, 36), gold));
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 1, 8), pole); p.name = 'pole'; g.add(p);
+  // a lantern on top
+  const lantern = new THREE.Group(); lantern.position.y = tune.hoopRadius + 0.9;
+  const glass = basic(0xffb347); const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.8, 6), glass); lantern.add(body);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.48, 0.42, 6), toon(0x3b2a2a)); cap.position.y = 0.6; lantern.add(cap);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.12, 6), toon(0x3b2a2a)); base.position.y = -0.45; lantern.add(base);
+  const glow = glowSprite(tex, 0xffa63a, 3.0, 0.7); lantern.add(glow); g.add(lantern);
+  g.userData = { glass, glow, pole: p };
+  return g;
+}
+function buildView() {
+  if (!window.THREE) return null;
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: !CHEAP, powerPreference: 'high-performance' }); }
+  catch (e) { return null; }
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  renderer.setPixelRatio(CHEAP ? 0.5 : Math.min(devicePixelRatio || 1, mobile ? 1.5 : 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const s3 = new THREE.Scene(), tex = glowTexture();
+  s3.fog = new THREE.Fog(0xe4876a, 110, 360);
+  const camera = new THREE.PerspectiveCamera(64, W / H, 0.3, 1200);
+  s3.add(new THREE.HemisphereLight(0xffc6a0, 0x2b2d5e, 1.7));
+  const sun = new THREE.DirectionalLight(0xffb36e, 2.4); sun.position.set(-160, 70, 260); s3.add(sun);
+  // the dusk sky: orange at the horizon, rose, then indigo overhead, with a low sun
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 32, 16), new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color(0x1a1f4f) }, mid: { value: new THREE.Color(0xa24c7c) }, hor: { value: new THREE.Color(0xffa25e) }, sunDir: { value: new THREE.Vector3(-160, 40, 260).normalize() } },
+    vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform vec3 top, mid, hor, sunDir; varying vec3 vP; void main(){ float h = vP.y; vec3 c = h < 0.0 ? hor : (h < 0.22 ? mix(hor, mid, h / 0.22) : mix(mid, top, clamp((h - 0.22) / 0.55, 0.0, 1.0))); float s = max(dot(normalize(vP), sunDir), 0.0); c += vec3(1.0, 0.75, 0.45) * pow(s, 260.0) * 2.0 + vec3(1.0, 0.6, 0.3) * pow(s, 8.0) * 0.35; gl_FragColor = vec4(c, 1.0);\n#include <colorspace_fragment>\n}',
+  }));
+  sky.renderOrder = -1; s3.add(sky);
+  // a few first stars overhead
+  const sp = []; for (let i = 0; i < 160; i++) { const a = (i * 2.399) % TAU, h = 0.45 + ((i * 0.618) % 1) * 0.5; sp.push(Math.cos(a) * Math.cos(h) * 700, Math.sin(h) * 700, Math.sin(a) * Math.cos(h) * 700); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+  const stars = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xfff4dc, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.8 })); s3.add(stars);
+  // distant hills and clouds
+  for (let i = 0; i < 18; i++) {
+    const a = i / 18 * TAU + 0.2, r = 430 + (i % 3) * 60, h = 70 + ((i * 37) % 60);
+    const m = new THREE.Mesh(new THREE.ConeGeometry(90 + (i % 4) * 25, h, 5), basic(i % 2 ? 0x3c2c5a : 0x4a3060, { fog: false }));
+    m.position.set(Math.cos(a) * r, h / 2 - 8, Math.sin(a) * r); s3.add(m);
+  }
+  for (let i = 0; i < 9; i++) {
+    const cg = new THREE.Group(), a = i / 9 * TAU, r = 260 + (i % 3) * 70;
+    for (let j = 0; j < 4; j++) { const c = new THREE.Mesh(new THREE.SphereGeometry(16 + j * 3, 10, 8), basic(j % 2 ? 0xf7a98a : 0xe98a86, { fog: false, transparent: true, opacity: 0.88 })); c.scale.y = 0.4; c.position.set(j * 18 - 27, (j % 2) * 4, (j % 3) * 6); cg.add(c); }
+    cg.position.set(Math.cos(a) * r, 70 + (i % 4) * 18, Math.sin(a) * r); cg.lookAt(0, cg.position.y, 0); s3.add(cg);
+  }
+  // the ground: a dark meadow with the pitch's oval
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400), toon(0x2b4740)); ground.rotation.x = -Math.PI / 2; s3.add(ground);
+  const hw = tune.arenaHalfWidth, hl = tune.arenaHalfLength;
+  const oval = new THREE.Mesh(new THREE.CircleGeometry(1, 48), toon(0x3d6150)); oval.rotation.x = -Math.PI / 2; oval.position.y = 0.03; oval.scale.set(hw + 4, hl + 4, 1); s3.add(oval);
+  const line = new THREE.Mesh(new THREE.RingGeometry(0.97, 1, 64), basic(0xe9d7a8, { transparent: true, opacity: 0.55 })); line.rotation.x = -Math.PI / 2; line.position.y = 0.06; line.scale.set(hw + 2, hl + 2, 1); s3.add(line);
+  const mid = new THREE.Mesh(new THREE.RingGeometry(7.6, 8, 40), basic(0xe9d7a8, { transparent: true, opacity: 0.55 })); mid.rotation.x = -Math.PI / 2; mid.position.y = 0.06; s3.add(mid);
+  // towers around the pitch, team banners, strings of lanterns between them
+  const towers = [], N = 18;
+  for (let i = 0; i < N; i++) {
+    const a = i / N * TAU, x = Math.cos(a) * (hw + 14), z = Math.sin(a) * (hl + 14), h = 22 + (i % 3) * 5;
+    const col = i % 3 === 0 ? 0xf0dab0 : (Math.sin(a) > 0 ? 0xc96a34 : 0x1f6763);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(3, 3.6, h, 10), toon(col)); t.position.set(x, h / 2, z); s3.add(t);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(4.6, 7, 10), toon(Math.sin(a) > 0 ? 0x7c3a2a : 0x183d44)); roof.position.set(x, h + 3.5, z); s3.add(roof);
+    const ban = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 7), toon(Math.sin(a) > 0 ? TEAMS[0].robe : TEAMS[1].robe, { side: THREE.DoubleSide })); ban.position.set(x * 0.95, h - 5, z * 0.95); ban.lookAt(0, h - 5, 0); s3.add(ban);
+    towers.push(new THREE.Vector3(x, h - 0.5, z));
+  }
+  const lamps = [], strPts = [];
+  for (let i = 0; i < N; i++) {
+    const a = towers[i], b = towers[(i + 1) % N];
+    for (let j = 0; j <= 8; j++) {
+      const u = j / 8, p = a.clone().lerp(b, u); p.y -= Math.sin(u * Math.PI) * 4;
+      strPts.push(p.x, p.y, p.z); if (j > 0 && j < 8) lamps.push(p);
+    }
+  }
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(strPts, 3));
+  s3.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0x2a1c24 })));
+  const lampMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.45, 8, 6), basic(0xffc860), lamps.length);
+  const lampGlow = new THREE.InstancedMesh(new THREE.PlaneGeometry(2.2, 2.2), new THREE.MeshBasicMaterial({ map: tex, color: 0xff9a3a, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }), lamps.length);
+  const mtx = new THREE.Matrix4();
+  lamps.forEach((p, i) => { mtx.makeTranslation(p.x, p.y, p.z); lampMesh.setMatrixAt(i, mtx); });
+  s3.add(lampMesh); s3.add(lampGlow);
+  // hoops at both ends
+  const hoopViews = { '1': [], '-1': [] };
+  for (const side of [1, -1]) hoops(side).forEach(h => {
+    const v = makeHoop(tex); v.position.set(h.x, h.y, h.z);
+    const pole = v.userData.pole; const len = h.y - tune.hoopRadius; pole.scale.y = len; pole.position.y = -tune.hoopRadius - len / 2;
+    s3.add(v); hoopViews[String(side)].push(v);
+  });
+  // the moving pieces
+  const riders = [];
+  const roles = ['chaser', 'chaser', 'seeker', 'keeper'];
+  for (let i = 0; i < 8; i++) { const m = makeRider(i < 4 ? 0 : 1, roles[i % 4], tex); s3.add(m); riders.push(m); }
+  const ball = makeBall(); s3.add(ball);
+  const rumblers = [makeRumbler(tex), makeRumbler(tex)]; rumblers.forEach(r => s3.add(r));
+  const glimmer = makeGlimmer(tex); s3.add(glimmer);
+  const marker = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.6, 4), basic(0xfff3a0)); marker.rotation.x = Math.PI; s3.add(marker);
+  // round shadows on the ground under everything that flies
+  const shadowMat = new THREE.MeshBasicMaterial({ color: 0x0c0a1a, transparent: true, opacity: 0.38, depthWrite: false });
+  const shadowGeo = new THREE.CircleGeometry(1, 16);
+  const shadows = []; for (let i = 0; i < 12; i++) { const s = new THREE.Mesh(shadowGeo, shadowMat); s.rotation.x = -Math.PI / 2; s.position.y = 0.08; s3.add(s); shadows.push(s); }
+  // trails: the power shot and the glimmer
+  const trail = []; for (let i = 0; i < 16; i++) { const s = glowSprite(tex, 0xffb060, 1, 0); s3.add(s); trail.push(s); }
+  const gtrail = []; for (let i = 0; i < 12; i++) { const s = glowSprite(tex, 0xffd860, 1, 0); s3.add(s); gtrail.push(s); }
+  // the figures lineup (?scene=figures)
+  const lineup = new THREE.Group(); lineup.visible = false; s3.add(lineup);
+  const figs = [
+    ['등불매 득점수', makeRider(0, 'chaser', tex)], ['등불매 추격수', makeRider(0, 'seeker', tex)], ['등불매 골키퍼', makeRider(0, 'keeper', tex)],
+    ['폭풍까마귀 득점수', makeRider(1, 'chaser', tex)], ['폭풍까마귀 추격수', makeRider(1, 'seeker', tex)], ['폭풍까마귀 골키퍼', makeRider(1, 'keeper', tex)],
+    ['볼라 (득점 공)', makeBall()], ['럼블러 (방해 공)', makeRumbler(tex)], ['글리머 (황금 공)', makeGlimmer(tex)],
+  ];
+  figs.forEach(([, m], i) => { // riders on the top row, the three balls below, up in the open sky
+    if (i < 6) { m.position.set((i - 2.5) * 3.3, 72, 0); m.rotation.y = -2.1; m.scale.setScalar(1.25); }
+    else { m.position.set((i - 7) * 5, 67.6, 0); m.scale.setScalar(1.6); }
+    lineup.add(m);
+  });
+  const V0 = { renderer, scene: s3, camera, sky, stars, riders, ball, rumblers, glimmer, marker, shadows, trail, gtrail, hoopViews, lineup, figs, lampGlow, lamps, trailHist: [], gHist: [], tex };
+  return V0;
+}
+const tmpV = window.THREE ? new THREE.Vector3() : null;
+function ip(e, a) { return { x: lerp(e.px, e.x, a), y: lerp(e.py, e.y, a), z: lerp(e.pz, e.z, a) }; }
+function syncView(a) {
+  const st = state, cam = st.cam;
+  const tNow = clock.now();
+  V.lineup.visible = false;
+  // riders
+  st.riders.forEach((r, i) => {
+    const m = V.riders[i], p = ip(r, a); m.visible = true;
+    m.position.set(p.x, p.y, p.z);
+    m.rotation.set(0, 0, 0, 'YXZ'); m.rotation.order = 'YXZ';
+    m.rotation.y = r.yaw; m.rotation.x = -r.pitch; m.rotation.z = r.roll + (r.stun > 0 ? Math.sin(tNow * 25) * 0.5 : 0);
+    const u = m.userData; u.capePivot.rotation.x = -1.25 + Math.sin(tNow * (8 + r.speed * 0.4) + i) * 0.18 - clamp(r.speed / 40, 0, 0.3);
+    const on = trailing(r.team) && r.role !== 'keeper';
+    u.bonus.material.opacity = on ? 0.35 + Math.sin(tNow * 6 + i) * 0.1 : 0;
+  });
+  // the ball
+  const b = ip(st.ball, a); V.ball.position.set(b.x, b.y, b.z); V.ball.rotation.x += 0.08; V.ball.rotation.y += 0.05;
+  // rumblers
+  st.rumblers.forEach((rb, i) => {
+    const m = V.rumblers[i]; m.visible = rb.active; if (!rb.active) return;
+    const p = ip(rb, a); m.position.set(p.x, p.y, p.z); m.rotation.set(rb.spin, rb.spin * 0.7, 0);
+    m.userData.ring.material.color.setHex(rb.rest > 0 ? 0x8a4a2a : 0xff7a2a);
+  });
+  // glimmer
+  const g = st.glimmer; V.glimmer.visible = g.active;
+  if (g.active) {
+    const p = ip(g, a); V.glimmer.position.set(p.x, p.y, p.z);
+    V.glimmer.lookAt(p.x + g.vx, p.y + g.vy, p.z + g.vz);
+    const f = Math.sin(tNow * 40) * 0.8; V.glimmer.userData.pl.rotation.z = f; V.glimmer.userData.pr.rotation.z = -f;
+  }
+  // marker over the rider you fly
+  const me = st.riders[st.ctrl], mp = ip(me, a); V.marker.visible = true;
+  V.marker.position.set(mp.x, mp.y + 2.1 + Math.sin(tNow * 4) * 0.12, mp.z); V.marker.rotation.y += 0.04;
+  // shadows: riders, ball, rumblers, glimmer
+  const casters = [...st.riders, st.ball, ...st.rumblers.filter(r => r.active), ...(g.active ? [g] : [])];
+  V.shadows.forEach((s, i) => {
+    const c = casters[i]; s.visible = !!c; if (!c) return;
+    const p = ip(c, a), k = clamp(1.7 - p.y / 50, 0.35, 1.7); s.position.x = p.x; s.position.z = p.z; s.scale.set(k, k, 1);
+  });
+  // trails
+  V.trailHist.unshift({ x: b.x, y: b.y, z: b.z }); V.trailHist.length = Math.min(V.trailHist.length, V.trail.length);
+  const shotOn = st.ball.mode === 'shot';
+  V.trail.forEach((s, i) => { const h = V.trailHist[i]; if (!h || !shotOn) { s.material.opacity = 0; return; } s.position.set(h.x, h.y, h.z); const k = 1 - i / V.trail.length; s.material.opacity = 0.75 * k; s.scale.setScalar((st.ball.perfect ? 2.2 : 1.4) * k + 0.2); s.material.color.setHex(st.ball.perfect ? 0xffe070 : 0xffa060); });
+  if (g.active) { V.gHist.unshift({ x: g.x, y: g.y, z: g.z }); V.gHist.length = Math.min(V.gHist.length, V.gtrail.length); }
+  V.gtrail.forEach((s, i) => { const h = V.gHist[i]; if (!h || !g.active) { s.material.opacity = 0; return; } s.position.set(h.x, h.y, h.z); const k = 1 - i / V.gtrail.length; s.material.opacity = 0.6 * k; s.scale.setScalar(1.1 * k + 0.2); });
+  // hoop lanterns flare after a goal, one after another
+  for (const side of ['1', '-1']) V.hoopViews[side].forEach((h, i) => {
+    const fl = Math.max(...st.flash[side].map((v, j) => clamp(v - Math.abs(i - j) * 0.15, 0, 1.6)));
+    h.userData.glow.scale.setScalar(3 + fl * 9); h.userData.glow.material.opacity = 0.7 + fl * 0.3;
+    h.userData.glass.color.setHex(fl > 0 ? 0xfff0b0 : 0xffb347);
+  });
+  // camera
+  const c = ip(cam, a); V.camera.position.set(c.x, c.y, c.z);
+  V.camera.lookAt(lerp(cam.plx, cam.lx, a), lerp(cam.ply, cam.ly, a), lerp(cam.plz, cam.lz, a));
+  V.camera.fov = cam.fov; V.camera.updateProjectionMatrix();
+}
+function faceLampsTo(camPos) {
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(1, 1, 1);
+  q.copy(V.camera.quaternion);
+  V.lamps.forEach((p, i) => { m.compose(p, q, s); V.lampGlow.setMatrixAt(i, m); });
+  V.lampGlow.instanceMatrix.needsUpdate = true;
+}
+function render3D() {
+  if (!V) return;
+  V.sky.position.copy(V.camera.position); V.stars.position.copy(V.camera.position);
+  faceLampsTo();
+  V.renderer.render(V.scene, V.camera);
+}
+function project(p) { // world point -> HUD pixels, and whether it is in front of the camera
+  tmpV.set(p.x, p.y, p.z).project(V.camera);
+  return { x: (tmpV.x + 1) / 2 * W, y: (1 - tmpV.y) / 2 * H, front: tmpV.z < 1 };
+}
+
+// ---- The HUD -------------------------------------------------------------------------
+function fmtTime(s) { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+function drawHawk(x, y, s, col) { // the 등불매 crest: a hawk with a lantern
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = col; ctx.strokeStyle = 'rgba(20,10,30,0.9)'; ctx.lineWidth = 1.6 / s;
+  ctx.beginPath(); ctx.moveTo(0, -6); ctx.quadraticCurveTo(10, -12, 16, -4); ctx.quadraticCurveTo(8, -4, 4, 2); ctx.lineTo(0, 10); ctx.lineTo(-4, 2); ctx.quadraticCurveTo(-8, -4, -16, -4); ctx.quadraticCurveTo(-10, -12, 0, -6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff3c0'; ctx.beginPath(); ctx.arc(0, 0, 2.4, 0, TAU); ctx.fill(); ctx.restore();
+}
+function drawRaven(x, y, s, col) { // the 폭풍까마귀 crest: a crow with a lightning tail
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = col; ctx.strokeStyle = 'rgba(20,10,30,0.9)'; ctx.lineWidth = 1.6 / s;
+  ctx.beginPath(); ctx.moveTo(-14, -2); ctx.lineTo(-4, -8); ctx.lineTo(4, -8); ctx.lineTo(14, -12); ctx.lineTo(8, -4); ctx.lineTo(14, 2); ctx.lineTo(4, 0); ctx.lineTo(2, 10); ctx.lineTo(-2, 4); ctx.lineTo(-6, 12); ctx.lineTo(-5, 2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#e8fffb'; ctx.beginPath(); ctx.arc(-6, -4, 1.6, 0, TAU); ctx.fill(); ctx.restore();
+}
+function drawScoreboard() {
+  const st = state, cx = W / 2;
+  panel(cx - 250, 12, 500, 66, 18);
+  drawHawk(cx - 220, 45, 1.25, TEAMS[0].css); drawRaven(cx + 220, 45, 1.25, TEAMS[1].css);
+  text(TEAMS[0].name, cx - 192, 30, 17, TEAMS[0].css, 'left');
+  text(String(st.score[0]), cx - 120, 55, 34, '#fff6e2', 'center', '800');
+  text(TEAMS[1].name, cx + 192, 30, 17, TEAMS[1].css, 'right');
+  text(String(st.score[1]), cx + 120, 55, 34, '#fff6e2', 'center', '800');
+  const left = tune.matchTime - st.t;
+  text(fmtTime(left), cx, 45, 30, left < 30 ? '#ffb2a0' : '#fff6e2', 'center', '800');
+  if (trailing(0)) { panel(cx - 250, 82, 190, 28, 10, 'rgba(60,30,10,0.7)'); text('추격 보너스: 빗자루 +' + Math.round((tune.catchUpMult - 1) * 100) + '%', cx - 155, 96, 16, '#ffd08a'); }
+  if (trailing(1)) { panel(cx + 60, 82, 190, 28, 10, 'rgba(10,40,40,0.7)'); text('상대 추격 보너스 +' + Math.round((tune.catchUpMult - 1) * 100) + '%', cx + 155, 96, 16, '#a8efe6'); }
+  if (!st.glimmer.active) { const s = tune.glimmerAt - st.t; text(`글리머까지 ${fmtTime(s)}`, cx, 96, 16, '#ffe9a8'); }
+}
+function edgeArrow(p, color, label) { // points at something off screen
+  let { x, y } = p; const cx = W / 2, cy = H / 2;
+  let dx = x - cx, dy = y - cy; if (!p.front) { dx = -dx; dy = -dy; }
+  const onScreen = p.front && x > 40 && x < W - 40 && y > 40 && y < H - 40;
+  if (onScreen) return false;
+  const k = Math.min((W / 2 - 54) / Math.abs(dx || 1e-3), (H / 2 - 54) / Math.abs(dy || 1e-3));
+  x = cx + dx * k; y = cy + dy * k; const a = Math.atan2(dy, dx);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.fillStyle = color; ctx.strokeStyle = 'rgba(15,10,30,0.9)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -13); ctx.lineTo(-4, 0); ctx.lineTo(-10, 13); ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore();
+  text(label, x - Math.cos(a) * 34, y - Math.sin(a) * 30, 16, color);
+  return true;
+}
+function drawHUD() {
+  const st = state, me = st.riders[st.ctrl], b = st.ball;
+  // speed lines
+  const spd = clamp((me.speed - tune.flySpeed) / (tune.flySpeed * 0.7), 0, 1);
+  if (spd > 0.05) {
+    ctx.save(); ctx.strokeStyle = `rgba(255,236,210,${0.28 * spd})`; ctx.lineWidth = 2;
+    for (let i = 0; i < 26; i++) { const a = i * 2.399 + Math.floor(st.t * 20) * 0.7, r0 = 330 + ((i * 53) % 120), r1 = r0 + 60 + spd * 120;
+      ctx.beginPath(); ctx.moveTo(W / 2 + Math.cos(a) * r0, H / 2 + Math.sin(a) * r0 * 0.6); ctx.lineTo(W / 2 + Math.cos(a) * r1, H / 2 + Math.sin(a) * r1 * 0.6); ctx.stroke(); }
+    ctx.restore();
+  }
+  drawScoreboard();
+  if (V) {
+    // the ball: an arrow when it is off screen, a ring when someone of ours should grab it
+    const bp = project(b);
+    if (!edgeArrow(bp, '#ff7a6a', '볼라') && b.holder !== st.ctrl) {
+      ctx.strokeStyle = 'rgba(255,140,120,0.9)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(bp.x, bp.y, 18, 0, TAU); ctx.stroke();
+    }
+    if (st.glimmer.active) {
+      const gp = project(st.glimmer);
+      if (!edgeArrow(gp, '#ffe066', '글리머')) { ctx.strokeStyle = 'rgba(255,224,102,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gp.x, gp.y, 14 + Math.sin(st.t * 8) * 3, 0, TAU); ctx.stroke(); }
+    }
+    for (const rb of st.rumblers) if (rb.active && rb.rest <= 0 && rb.target === st.ctrl && dist(rb, me) < 45) {
+      const rp = project(rb); edgeArrow(rp, '#ff9a3a', '럼블러!');
+    }
+    // the target hoop for a shot
+    if (b.holder === st.ctrl) {
+      const hs = hoops(1); for (const h of hs) { const p = project(h); if (p.front) { ctx.strokeStyle = 'rgba(255,215,130,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.arc(p.x, p.y, 22, 0, TAU); ctx.stroke(); ctx.setLineDash([]); } }
+    }
+  }
+  // who you fly, stamina, the charge meter (top left on a touch screen, clear of the joystick)
+  const py = touchMode ? 12 : H - 92;
+  panel(18, py, 260, 74, 14);
+  const role = me.role === 'seeker' ? '추격수 · 글리머를 잡아요' : (b.holder === me.id ? '득점수 · 공을 가졌어요' : '득점수');
+  text(role, 34, py + 22, 18, TEAMS[0].css, 'left');
+  ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(34, py + 46, 228, 12);
+  ctx.fillStyle = me.stamina > 0.25 ? '#ffd27a' : '#ff8a6a'; ctx.fillRect(34, py + 46, 228 * me.stamina, 12);
+  text('가속', 34, py + 66, 15, '#f2e6d0', 'left');
+  if (me.stun > 0) text('휘청!', 260, py + 66, 16, '#ff9a7a', 'right');
+  if (st.charging) {
+    const c = clamp(st.holdT / tune.chargeTime, 0, 1), x0 = W / 2 - 160, y0 = H - 118;
+    panel(x0 - 12, y0 - 28, 344, 66, 14);
+    ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(x0, y0, 320, 18);
+    ctx.fillStyle = 'rgba(255,224,110,0.45)'; ctx.fillRect(x0 + 320 * tune.sweetFrom, y0 - 4, 320 * (tune.sweetTo - tune.sweetFrom), 26);
+    const perfect = c >= tune.sweetFrom && c <= tune.sweetTo;
+    ctx.fillStyle = perfect ? '#fff07a' : '#ff9a4a'; ctx.fillRect(x0, y0, 320 * c, 18);
+    text(st.holdT < tune.tapTime ? '떼면 패스' : (perfect ? '지금 떼면 완벽한 슛!' : '파워 슛 충전'), W / 2, y0 + 30, 17, perfect ? '#fff07a' : '#ffe4c4');
+  }
+  // messages
+  st.msgs.forEach((m, i) => {
+    const a = clamp(m.t / 0.4, 0, 1); ctx.globalAlpha = a;
+    text(m.text, W / 2, 190 + i * 44, i === st.msgs.length - 1 ? 34 : 26, m.color, 'center', '800');
+    ctx.globalAlpha = 1;
+  });
+  // the first minute's prompts
+  const T = touchMode;
+  const tips = [
+    T ? '왼쪽 조이스틱으로 날아 보세요: 좌우 선회, 위로 상승, 아래로 하강' : 'WASD 또는 방향키로 날아 보세요: 좌우 선회, 위로 상승, 아래로 하강',
+    T ? '슛 버튼을 짧게 눌러 동료에게 패스하세요' : 'Space를 짧게 눌러 동료에게 패스하세요',
+    T ? '슛 버튼을 길게 눌렀다 떼면 파워 슛: 노란 칸에서 떼면 완벽!' : 'Space를 길게 눌렀다 떼면 파워 슛: 노란 칸에서 떼면 완벽!',
+    T ? '가속 버튼을 눌러 보세요. 급강하하면 더 빨라요' : 'Shift로 가속하세요. 급강하하면 더 빨라요',
+  ];
+  if (st.tut < tips.length && st.t < 90) {
+    const tip = tips[st.tut]; ctx.font = `600 19px ${FONT}`; const w = ctx.measureText(tip).width + 40;
+    panel(W / 2 - w / 2, 124, w, 38, 12, 'rgba(30,18,60,0.72)'); text(tip, W / 2, 143, 19, '#fff1d6');
+  }
+  if (st.glimmerNote > 0) {
+    const tip = T ? '글리머 등장! 추격수 버튼으로 바꿔 쫓아가세요 (+' + tune.glimmerPoints + '점, 경기 끝)' : '글리머 등장! Tab으로 추격수를 조종해 쫓아가세요 (+' + tune.glimmerPoints + '점, 경기 끝)';
+    ctx.font = `700 21px ${FONT}`; const w = ctx.measureText(tip).width + 44;
+    panel(W / 2 - w / 2, H - 170, w, 42, 12, 'rgba(70,50,10,0.75)'); text(tip, W / 2, H - 149, 21, '#ffe27a', 'center', '700');
+  }
+  if (touchMode) drawTouch();
+}
+function drawTouch() {
+  // joystick
+  const bx = stick ? stick.ox : 170, by = stick ? stick.oy : 560, Rr = tune.stickRadius;
+  ctx.fillStyle = 'rgba(255,240,220,0.10)'; ctx.strokeStyle = 'rgba(255,240,220,0.45)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(bx, by, Rr, 0, TAU); ctx.fill(); ctx.stroke();
+  const ax = stickAxes(); const kx = bx + ax.x * Rr, ky = by - ax.y * Rr;
+  ctx.fillStyle = 'rgba(255,200,130,0.65)'; ctx.beginPath(); ctx.arc(kx, ky, 34, 0, TAU); ctx.fill();
+  if (!stick) text('여기를 끌어 조종', bx, by + Rr + 22, 16, '#f6e8d2');
+  for (const b of BUTTONS) {
+    const on = down.has(b.code), dim = b.code === 'Tab' && !state.glimmer.active;
+    ctx.globalAlpha = dim ? 0.45 : 1;
+    ctx.fillStyle = on ? 'rgba(255,200,120,0.6)' : 'rgba(30,20,55,0.5)'; ctx.strokeStyle = 'rgba(255,236,210,0.75)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill(); ctx.stroke();
+    if (b.drawn === 'note') { // a drawn speaker, crossed when muted
+      ctx.fillStyle = '#fff1d8'; ctx.beginPath(); ctx.moveTo(b.x - 12, b.y - 5); ctx.lineTo(b.x - 5, b.y - 5); ctx.lineTo(b.x + 4, b.y - 12); ctx.lineTo(b.x + 4, b.y + 12); ctx.lineTo(b.x - 5, b.y + 5); ctx.lineTo(b.x - 12, b.y + 5); ctx.fill();
+      if (muted) { ctx.strokeStyle = '#ff8a6a'; ctx.beginPath(); ctx.moveTo(b.x + 8, b.y - 8); ctx.lineTo(b.x + 16, b.y + 8); ctx.moveTo(b.x + 16, b.y - 8); ctx.lineTo(b.x + 8, b.y + 8); ctx.stroke(); }
+    } else if (b.code === 'KeyP') {
+      ctx.fillStyle = '#fff1d8'; ctx.fillRect(b.x - 9, b.y - 10, 6, 20); ctx.fillRect(b.x + 3, b.y - 10, 6, 20);
+    } else {
+      const hasBall = state.ball.holder === state.ctrl;
+      const label = b.code === 'Space' ? (hasBall ? '슛' : '빼앗기') : b.label;
+      text(label, b.x, b.y - (b.code === 'Space' && hasBall ? 8 : 0), b.r > 60 ? 26 : 17, '#fff1d8', 'center', '700');
+      if (b.code === 'Space' && hasBall) text('짧게: 패스', b.x, b.y + 22, 15, '#ffdcae');
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+function drawTitleOverlay() {
+  ctx.clearRect(0, 0, W, H);
+  if (!V) clear('#1c1636');
+  const grd = ctx.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, 'rgba(20,14,48,0.15)'); grd.addColorStop(1, 'rgba(20,14,48,0.75)'); ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  drawHawk(W / 2 - 250, 150, 2.6, TEAMS[0].css); drawRaven(W / 2 + 250, 150, 2.6, TEAMS[1].css);
+  text(TITLE, W / 2, 150, 92, '#ffe3a6', 'center', '900');
+  text('빗자루를 타고 하늘에서 겨루는 공중 구기', W / 2, 222, 24, '#fff1dc');
+  const lines = touchMode ? TOUCH_CONTROLS : CONTROLS;
+  panel(W / 2 - 400, 268, 800, 52 + lines.length * 36, 18);
+  text('볼라로 고리에 골 +' + tune.goalPoints + ' · 럼블러를 피하기 · 글리머를 잡으면 +' + tune.glimmerPoints + ' 그리고 경기 끝', W / 2, 296, 19, '#ffd9a0');
+  lines.forEach((c, i) => text(c, W / 2, 334 + i * 36, 19, '#efe4d2'));
+  const blink = 0.6 + Math.sin(clock.now() * 4) * 0.4; ctx.globalAlpha = blink;
+  text(touchMode ? '화면을 눌러 시작' : 'Enter 또는 Space로 시작 (화면을 눌러도 돼요)', W / 2, H - 70, 28, '#fff', 'center', '800');
+  ctx.globalAlpha = 1;
+  if (innerHeight > innerWidth) text('휴대폰을 가로로 돌리면 더 크게 보여요', W / 2, H - 28, 18, '#ffd9a0');
+  if (!V) text('이 브라우저에서 3D(WebGL)를 쓸 수 없어요', W / 2, H - 110, 20, '#ff9a8a');
+}
+
+// ---- Scenes ---------------------------------------------------------------------------
+const scenes = {
+  figures: {
+    update(dt) { state.t += dt; },
+    draw() {
+      ctx.clearRect(0, 0, W, H);
+      if (!V) { clear('#1c1636'); text('WebGL 없음', W / 2, H / 2, 30, '#fff'); return; }
+      V.riders.forEach(m => m.visible = false); V.ball.visible = false; V.rumblers.forEach(m => m.visible = false); V.glimmer.visible = false; V.marker.visible = false;
+      V.shadows.forEach(s => s.visible = false); V.trail.forEach(s => s.material.opacity = 0); V.gtrail.forEach(s => s.material.opacity = 0);
+      V.lineup.visible = true;
+      V.camera.position.set(0, 70.4, 17); V.camera.lookAt(0, 70.4, 0); V.camera.fov = 50; V.camera.updateProjectionMatrix();
+      render3D();
+      V.figs.forEach(([name, m], i) => { const p = project({ x: m.position.x, y: m.position.y - (i < 6 ? 1.0 : 1.9), z: 0 }); text(name, p.x, p.y, 17, '#fff3dc'); });
+      text('스카이훅의 선수와 공', W / 2, 40, 26, '#ffe3a6', 'center', '800');
+    },
+  },
+  title: {
+    update(dt) {
+      state.titleT = (state.titleT || 0) + dt;
+      if (pressed('Enter') || pressed('Space')) { reset(); scene = 'play'; }
+    },
+    draw() {
+      if (V) {
+        syncView(1);
+        const a = (state.titleT || 0) * 0.08;
+        V.camera.position.set(Math.sin(a) * 70, 34, Math.cos(a) * 70 - 10); V.camera.lookAt(0, 16, 0); V.camera.fov = 60; V.camera.updateProjectionMatrix();
+        V.marker.visible = false; render3D();
+      }
+      drawTitleOverlay();
+    },
+  },
+  play: {
+    update(dt) {
+      if (pressed('KeyP') || pressed('Escape')) { scene = 'pause'; return; }
+      updateMatch(dt);
+    },
+    draw() {
+      ctx.clearRect(0, 0, W, H);
+      if (V) { syncView(ALPHA); render3D(); } else clear('#1c1636');
+      drawHUD();
+    },
+  },
+  pause: {
+    update() { if (pressed('KeyP') || pressed('Escape') || pressed('Enter')) scene = 'play'; },
+    draw() {
+      scenes.play.draw(); ctx.fillStyle = 'rgba(15,10,35,0.55)'; ctx.fillRect(0, 0, W, H);
+      text('일시정지', W / 2, H / 2 - 20, 54, '#fff', 'center', '800');
+      text(touchMode ? '화면을 누르면 계속' : 'P 또는 Enter로 계속', W / 2, H / 2 + 40, 24, '#efe4d2');
+    },
+  },
+  results: {
+    update(dt) {
+      state.resultsT += dt;
+      for (const e of [...state.riders, state.ball, ...state.rumblers, state.glimmer, state.cam]) { e.px = e.x; e.py = e.y; e.pz = e.z; }
+      const c = state.cam; c.plx = c.lx; c.ply = c.ly; c.plz = c.lz;
+      if (state.resultsT > 0.8 && (pressed('Enter') || pressed('Space'))) { reset(); scene = 'play'; }
+    },
+    draw() {
+      ctx.clearRect(0, 0, W, H);
+      if (V) { syncView(1); render3D(); }
+      drawScoreboard();
+      ctx.fillStyle = 'rgba(15,10,35,0.45)'; ctx.fillRect(0, 0, W, H);
+      const st = state, win = st.winner;
+      panel(W / 2 - 330, 150, 660, 400, 22, 'rgba(22,14,48,0.86)');
+      const head = win === 0 ? '승리!' : win === 1 ? '패배' : '무승부';
+      text(head, W / 2, 210, 64, win === 0 ? '#ffd27a' : win === 1 ? '#a8d8f0' : '#fff', 'center', '900');
+      text(st.gained.replace(/^\S+\s+/, ''), W / 2, 268, 22, '#efe4d2');
+      drawHawk(W / 2 - 200, 330, 1.8, TEAMS[0].css); drawRaven(W / 2 + 200, 330, 1.8, TEAMS[1].css);
+      text(`${st.score[0]}  :  ${st.score[1]}`, W / 2, 330, 52, '#fff6e2', 'center', '800');
+      const s = st.stats;
+      text(`골 ${s.goals} · 완벽한 슛 ${s.perfect} · 빼앗기 ${s.steals} · 선방 ${s.saves} · 럼블러에 맞음 ${s.hits}`, W / 2, 400, 20, '#ffe0b8');
+      text(`경기 시간 ${fmtTime(st.t)}`, W / 2, 440, 18, '#d8ccb8');
+      if (st.resultsT > 0.8) text(touchMode ? '화면을 눌러 다시 하기' : 'Enter로 다시 하기 (화면을 눌러도 돼요)', W / 2, 505, 26, '#fff', 'center', '800');
+    },
+  },
+};
+
+// ---- Loop: fixed step, frame time clamped ---------------------------------------------
+function step() {
+  if (pressed('KeyM')) { setMuted(!muted); hit.delete('KeyM'); }
+  scenes[scene].update(STEP); hit.clear();
+}
+let last, acc = 0, ALPHA = 1; // ALPHA: how far the frame is between the last two steps
+function tick() {
+  const now = clock.now();
+  acc += Math.min(now - last, 0.25); last = now; // a stall never fast-forwards the game
+  while (acc >= STEP) { step(); acc -= STEP; }
+  ALPHA = acc / STEP; // draw between steps, so the view never judders
+  drawFrame();
+}
+function drawFrame() {
+  scenes[scene].draw();
+  if (audio && audio.wind && state) { // the wind rises with speed
+    const me = state.riders[state.ctrl], sp = scene === 'play' ? clamp(me.speed / (tune.flySpeed * 1.8), 0, 1) : 0;
+    audio.wind.g.gain.value = muted ? 0 : 0.02 + sp * 0.16; audio.wind.f.frequency.value = 350 + sp * 900;
+  }
+}
+function frame() { tick(); requestAnimationFrame(frame); }
+// A headless browser on a time budget runs timers but almost no animation frames: a timer
+// ticks when no frame has come for 100 ms on a visible page; a hidden tab stays paused.
+function timer() { if (document.visibilityState === 'visible' && clock.now() - last > 0.1) tick(); }
+
+// ---- What a check can read and drive (?manual=1 stops the loop; players never see it) ----
+window.game = {
+  get scene() { return scene; },
+  get state() { return state; },
+  press(code) { hit.add(code); },
+  hold(code, on) { on ? down.add(code) : down.delete(code); },
+  get events() { return events; }, // the loop steps; a check empties it
+  step(n = 1, draw = true, alpha = 1) {
+    for (let i = 0; i < n; i++) step();
+    if (draw) { ALPHA = alpha; drawFrame(); }
+  },
+};
+
+V = buildView();
+fit();
+reset();
+scene = params.get('scene') || 'title';
+last = clock.now();
+if (params.get('manual') === '1') drawFrame();
+else { requestAnimationFrame(frame); setInterval(timer, 50); }
+</script>
+</body>
+</html>

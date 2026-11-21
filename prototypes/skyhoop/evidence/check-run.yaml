@@ -1,0 +1,147 @@
+# The one-shot's small check (check-run/1).
+# Written by one-shot-check.sh --record: the results are /prototype's reading of
+# evidence/self-check.tsv; never edited by hand.
+kind: check-run/1
+engine: web
+browser: "HeadlessChrome/153.0.0.0"
+time: "2026-11-21 12:32:25"
+checks:
+  - id: boots
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: shot
+    result: pass
+    evidence:
+      - "evidence/play.png"
+  - id: outlines
+    result: pass
+    evidence:
+      - "evidence/figures.png"
+  - id: brief-words
+    result: pass
+    evidence:
+      - "evidence/brief-words.tsv"
+  - id: emoji
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: nearest-game
+    result: pass
+    evidence:
+      - "evidence/nearest-game.txt"
+brief_checklist:
+  - id: L1
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Look: 해 질 녘 하늘 아래 등불이 줄지어 걸린 공중 경기장. 부드럽고 둥근 동화풍 형태. 하늘은 주황→남색의 좁은 명도 범위, 선수와 공이 가장 밝다. 우리 팀 '등불매'는 따뜻한 주황·크림, 상대 '폭풍까마귀'는 짙은 청록·은색. 볼라는 붉은 가죽, 럼블러는 검은 쇠공에 불꽃 테두리, 글리머는 금빛 날개와 빛 꼬리. 그림자는 차갑게, 빛은 따뜻하게. 대표 디테일: 골 고리마다 걸린 등불이 골이 들어가면 차례로 터지듯 켜진다. 모든 선수와 공은 그려서 표현하고, 이모지나 그냥 동그라미는 쓰지 않는다. *(provisional)*"
+  - id: L2
+    result: pass
+    evidence: "evidence/figures.png"
+    item: "References: 없음"
+  - id: L3
+    result: pass
+    evidence: "evidence/play.png"
+    item: "View: 3D · Camera: 빗자루 뒤를 따라가는 추격 카메라, 속도가 오르면 시야가 넓어지고 바람이 거세짐, 땅에 선수 그림자 *(provisional)*"
+  - id: F1
+    result: pass
+    evidence: "index.html:282"
+    item: "3D 추격 카메라 빗자루 비행: 기울며 선회, 손 떼면 수평 복귀, 급강하로 가속"
+  - id: F2
+    result: pass
+    evidence: "index.html:249"
+    item: "3 대 3 팀(득점수 2, 추격수 1), 공에 가장 가까운 선수로 자동 전환"
+  - id: F3
+    result: pass
+    evidence: "index.html:718"
+    item: "볼라 패스, 몸 부딪쳐 빼앗기, 타이밍을 맞추면 강해지는 충전 파워 슛; 양쪽 끝에 고리 골대 3개씩, 골문을 지키는 AI"
+  - id: F4
+    result: pass
+    evidence: "index.html:511"
+    item: "럼블러 2개: 공 가진 선수를 노려 날아들고, 맞으면 공을 놓치고 휘청"
+  - id: F5
+    result: pass
+    evidence: "index.html:534"
+    item: "글리머: 1분 뒤 등장, 불규칙하게 날고, 상대 추격수와 경쟁, 잡으면 50점과 경기 끝"
+  - id: F6
+    result: pass
+    evidence: "evidence/long-run.png"
+    item: "큰 점수판과 시계, 지는 팀의 보이는 보너스, 결과 화면과 다시 하기"
+  - id: F7
+    result: not_run
+    mark: not assessed
+    why: "등불 연출(397)과 파워 슛 빛 꼬리(1029)는 코드에 있음; 바람 소리와 효과음은 들어 볼 수 없어 확인하지 못함"
+    evidence: "index.html:397"
+    item: "골 등불 연출, 파워 슛 빛 꼬리와 바람 소리"
+  - id: F8
+    result: pass
+    evidence: "evidence/touch.png"
+    item: "모바일 터치 조작: 가상 조이스틱과 버튼, 휴대폰 화면 크기에 맞춤"
+  - id: S1
+    result: pass
+    evidence: "index.html:394"
+    item: "득점 (볼라와 고리) · in the slice"
+  - id: S2
+    result: pass
+    evidence: "index.html:511"
+    item: "방해 공 (럼블러) · in the slice"
+  - id: S3
+    result: pass
+    evidence: "evidence/long-run.png"
+    item: "황금 공 추격 (글리머) · in the slice"
+  - id: S4
+    result: pass
+    evidence: "evidence/touch.png"
+    item: "모바일 터치 조작 · in the slice"
+  - id: M1
+    result: pass
+    evidence: "index.html:253"
+    item: "경기장 위 하늘에서 시작하면 바로 볼라가 손에 있다."
+  - id: M2
+    result: pass
+    evidence: "index.html:288"
+    item: "방향키로 날면 빗자루가 기울며 선회하고 손을 떼면 수평으로 돌아온다."
+  - id: M3
+    result: pass
+    evidence: "index.html:397"
+    item: "앞의 동료에게 Space로 패스하고, 공이 돌아오면 고리 앞까지 날아가 길게 눌러 파워 슛, 첫 골에 등불이 켜진다."
+  - id: M4
+    result: pass
+    evidence: "index.html:472"
+    item: "그 사이 럼블러 하나가 날아온다: 피하면 아슬아슬, 맞으면 휘청이며 공을 떨어뜨린다."
+  - id: M5
+    result: pass
+    evidence: "index.html:534"
+    item: "1분이 되면 종소리와 함께 글리머가 나타나고, Tab으로 추격수가 되어 쫓기 시작한다."
+  - id: M6
+    result: not_run
+    mark: not assessed
+    why: "게임 내용이 아니라 브리프의 표시 '(guessed)'라 확인할 것이 없음"
+    item: "*(guessed)*"
+  - id: C1
+    result: pass
+    evidence: "index.html:626"
+    item: "처음 1분은 상대가 느슨하게 막는다."
+  - id: C2
+    result: pass
+    evidence: "index.html:460"
+    item: "2분쯤부터 상대가 패스를 가로채고, 럼블러가 공 가진 선수를 노리고, 상대 추격수도 글리머를 쫓는다."
+  - id: C3
+    result: pass
+    evidence: "evidence/long-run.png"
+    item: "지면 결과 화면에서 바로 다시 한다."
+  - id: C4
+    result: pass
+    evidence: "evidence/long-run.png"
+    item: "지고 있는 팀은 보이는 작은 보너스(빗자루가 조금 빨라짐)를 받고, 점수가 같아지면 사라진다."
+  - id: C5
+    result: not_run
+    mark: not assessed
+    why: "게임 내용이 아니라 브리프의 표시 '(provisional)'라 확인할 것이 없음"
+    item: "*(provisional)*"
+measures:
+  - id: step-time
+    value: 3.100
+    unit: ms
+    by: browser
+    detail: "mean 0.073 ms, slowest 3.100 ms, 252 steps"

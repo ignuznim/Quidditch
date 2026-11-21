@@ -1,0 +1,26 @@
+L1	pass	evidence/play.png	해 질 녘 주황→보라→남색 하늘, 등불 줄, 주황 등불매와 청록 폭풍까마귀, 붉은 볼라, 불꽃 테두리 럼블러, 금빛 날개 글리머, 모두 도형을 조합해 그림
+L2	pass	evidence/figures.png	참고 자료 없음; 원작 이름과 그림 없이 새로 그림
+L3	pass	evidence/play.png	3D 추격 카메라가 빗자루 뒤를 따라감, 속도에 따라 시야가 넓어짐(index.html:771), 바람 소리(index.html:1311), 땅에 그림자
+F1	pass	index.html:282	선회할 때 기울고(288) 손을 떼면 수평으로 돌아오며(287), 급강하하면 속도가 붙음(290)
+F2	pass	index.html:249	한 팀에 득점수 2, 추격수 1, 골키퍼; 공에 가까운 선수로 자동 전환(691)
+F3	pass	index.html:718	짧게 누르면 패스, 길게 누르면 충전 슛과 완벽 구간, 빼앗기(tryTackle), 양쪽 끝에 고리 3개씩(index.html:954), 골키퍼 AI(650)
+F4	pass	index.html:511	럼블러 2개가 공 가진 선수를 노리고(475), 맞으면 휘청이며 공을 놓침(516)
+F5	pass	index.html:534	60초에 등장하고 불규칙하게 날며 추격수를 피해 달아남; evidence/long-run.png에서 상대 추격수가 잡아 +50점과 경기 종료
+F6	pass	evidence/long-run.png	큰 점수판과 시계, 지는 팀 보너스 배지와 빛 꼬리, 결과 화면과 다시 하기
+F7	not_assessed	index.html:397	등불 연출(397)과 파워 슛 빛 꼬리(1029)는 코드에 있음; 바람 소리와 효과음은 들어 볼 수 없어 확인하지 못함
+F8	pass	evidence/touch.png	가상 조이스틱과 버튼, 1280x720 기준 화면에 맞춰 늘어남; 실제 휴대폰에서 터치는 확인하지 못함
+S1	pass	index.html:394	볼라가 고리를 통과하면 득점; evidence/long-run.png에서 30 대 80
+S2	pass	index.html:511	럼블러 맞음 6회 기록(evidence/long-run.png)
+S3	pass	evidence/long-run.png	글리머를 잡자 경기가 끝남
+S4	pass	evidence/touch.png	터치 조작 화면이 보임
+M1	pass	index.html:253	첫 득점수가 볼라를 들고 시작하고, 킥오프 직후 4초 동안은 빼앗기지 않음
+M2	pass	index.html:288	선회할 때 기울고 손을 떼면 수평으로 돌아옴
+M3	pass	index.html:397	패스 안내 다음에 슛 안내(evidence/play.png), 골이 들어가면 그 고리 등불부터 차례로 켜짐
+M4	pass	index.html:472	첫 1분 동안 첫 럼블러가 조종 중인 선수를 천천히 노림; 맞으면 휘청이며 공을 놓침
+M5	pass	index.html:534	종소리, 글리머 등장 안내, Tab이나 추격수 버튼으로 바꿔 쫓음(680)
+M6	not_assessed	-	게임 내용이 아니라 브리프의 표시 '(guessed)'라 확인할 것이 없음
+C1	pass	index.html:626	처음 1분은 빼앗기 성공률과 속도가 낮고, 가로채기는 0
+C2	pass	index.html:460	ramp에 따라 가로채기(460), 공 가진 선수를 노리는 럼블러 비율(475), 상대 추격수 실력(317)이 올라감
+C3	pass	evidence/long-run.png	패배 결과 화면, Enter나 화면을 눌러 다시 하기
+C4	pass	evidence/long-run.png	'추격 보너스: 빗자루 +8%' 배지, 속도 배율(319), 동점이 되면 사라짐
+C5	not_assessed	-	게임 내용이 아니라 브리프의 표시 '(provisional)'라 확인할 것이 없음

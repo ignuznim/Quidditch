@@ -1,0 +1,54 @@
+time	2026-11-21 12:32:25
+keep	lines	0	pinned	0
+checklist	L1	pass	evidence/play.png	Look: 해 질 녘 하늘 아래 등불이 줄지어 걸린 공중 경기장. 부드럽고 둥근 동화풍 형태. 하늘은 주황→남색의 좁은 명도 범위, 선수와 공이 가장 밝다. 우리 팀 '등불매'는 따뜻한 주황·크림, 상대 '폭풍까마귀'는 짙은 청록·은색. 볼라는 붉은 가죽, 럼블러는 검은 쇠공에 불꽃 테두리, 글리머는 금빛 날개와 빛 꼬리. 그림자는 차갑게, 빛은 따뜻하게. 대표 디테일: 골 고리마다 걸린 등불이 골이 들어가면 차례로 터지듯 켜진다. 모든 선수와 공은 그려서 표현하고, 이모지나 그냥 동그라미는 쓰지 않는다. *(provisional)*	해 질 녘 주황→보라→남색 하늘, 등불 줄, 주황 등불매와 청록 폭풍까마귀, 붉은 볼라, 불꽃 테두리 럼블러, 금빛 날개 글리머, 모두 도형을 조합해 그림
+checklist	L2	pass	evidence/figures.png	References: 없음	참고 자료 없음; 원작 이름과 그림 없이 새로 그림
+checklist	L3	pass	evidence/play.png	View: 3D · Camera: 빗자루 뒤를 따라가는 추격 카메라, 속도가 오르면 시야가 넓어지고 바람이 거세짐, 땅에 선수 그림자 *(provisional)*	3D 추격 카메라가 빗자루 뒤를 따라감, 속도에 따라 시야가 넓어짐(index.html:771), 바람 소리(index.html:1311), 땅에 그림자
+checklist	F1	pass	index.html:282	3D 추격 카메라 빗자루 비행: 기울며 선회, 손 떼면 수평 복귀, 급강하로 가속	선회할 때 기울고(288) 손을 떼면 수평으로 돌아오며(287), 급강하하면 속도가 붙음(290)
+checklist	F2	pass	index.html:249	3 대 3 팀(득점수 2, 추격수 1), 공에 가장 가까운 선수로 자동 전환	한 팀에 득점수 2, 추격수 1, 골키퍼; 공에 가까운 선수로 자동 전환(691)
+checklist	F3	pass	index.html:718	볼라 패스, 몸 부딪쳐 빼앗기, 타이밍을 맞추면 강해지는 충전 파워 슛; 양쪽 끝에 고리 골대 3개씩, 골문을 지키는 AI	짧게 누르면 패스, 길게 누르면 충전 슛과 완벽 구간, 빼앗기(tryTackle), 양쪽 끝에 고리 3개씩(index.html:954), 골키퍼 AI(650)
+checklist	F4	pass	index.html:511	럼블러 2개: 공 가진 선수를 노려 날아들고, 맞으면 공을 놓치고 휘청	럼블러 2개가 공 가진 선수를 노리고(475), 맞으면 휘청이며 공을 놓침(516)
+checklist	F5	pass	index.html:534	글리머: 1분 뒤 등장, 불규칙하게 날고, 상대 추격수와 경쟁, 잡으면 50점과 경기 끝	60초에 등장하고 불규칙하게 날며 추격수를 피해 달아남; evidence/long-run.png에서 상대 추격수가 잡아 +50점과 경기 종료
+checklist	F6	pass	evidence/long-run.png	큰 점수판과 시계, 지는 팀의 보이는 보너스, 결과 화면과 다시 하기	큰 점수판과 시계, 지는 팀 보너스 배지와 빛 꼬리, 결과 화면과 다시 하기
+checklist	F7	not_assessed	index.html:397	골 등불 연출, 파워 슛 빛 꼬리와 바람 소리	등불 연출(397)과 파워 슛 빛 꼬리(1029)는 코드에 있음; 바람 소리와 효과음은 들어 볼 수 없어 확인하지 못함
+checklist	F8	pass	evidence/touch.png	모바일 터치 조작: 가상 조이스틱과 버튼, 휴대폰 화면 크기에 맞춤	가상 조이스틱과 버튼, 1280x720 기준 화면에 맞춰 늘어남; 실제 휴대폰에서 터치는 확인하지 못함
+checklist	S1	pass	index.html:394	득점 (볼라와 고리) · in the slice	볼라가 고리를 통과하면 득점; evidence/long-run.png에서 30 대 80
+checklist	S2	pass	index.html:511	방해 공 (럼블러) · in the slice	럼블러 맞음 6회 기록(evidence/long-run.png)
+checklist	S3	pass	evidence/long-run.png	황금 공 추격 (글리머) · in the slice	글리머를 잡자 경기가 끝남
+checklist	S4	pass	evidence/touch.png	모바일 터치 조작 · in the slice	터치 조작 화면이 보임
+checklist	M1	pass	index.html:253	경기장 위 하늘에서 시작하면 바로 볼라가 손에 있다.	첫 득점수가 볼라를 들고 시작하고, 킥오프 직후 4초 동안은 빼앗기지 않음
+checklist	M2	pass	index.html:288	방향키로 날면 빗자루가 기울며 선회하고 손을 떼면 수평으로 돌아온다.	선회할 때 기울고 손을 떼면 수평으로 돌아옴
+checklist	M3	pass	index.html:397	앞의 동료에게 Space로 패스하고, 공이 돌아오면 고리 앞까지 날아가 길게 눌러 파워 슛, 첫 골에 등불이 켜진다.	패스 안내 다음에 슛 안내(evidence/play.png), 골이 들어가면 그 고리 등불부터 차례로 켜짐
+checklist	M4	pass	index.html:472	그 사이 럼블러 하나가 날아온다: 피하면 아슬아슬, 맞으면 휘청이며 공을 떨어뜨린다.	첫 1분 동안 첫 럼블러가 조종 중인 선수를 천천히 노림; 맞으면 휘청이며 공을 놓침
+checklist	M5	pass	index.html:534	1분이 되면 종소리와 함께 글리머가 나타나고, Tab으로 추격수가 되어 쫓기 시작한다.	종소리, 글리머 등장 안내, Tab이나 추격수 버튼으로 바꿔 쫓음(680)
+checklist	M6	not_assessed	-	*(guessed)*	게임 내용이 아니라 브리프의 표시 '(guessed)'라 확인할 것이 없음
+checklist	C1	pass	index.html:626	처음 1분은 상대가 느슨하게 막는다.	처음 1분은 빼앗기 성공률과 속도가 낮고, 가로채기는 0
+checklist	C2	pass	index.html:460	2분쯤부터 상대가 패스를 가로채고, 럼블러가 공 가진 선수를 노리고, 상대 추격수도 글리머를 쫓는다.	ramp에 따라 가로채기(460), 공 가진 선수를 노리는 럼블러 비율(475), 상대 추격수 실력(317)이 올라감
+checklist	C3	pass	evidence/long-run.png	지면 결과 화면에서 바로 다시 한다.	패배 결과 화면, Enter나 화면을 눌러 다시 하기
+checklist	C4	pass	evidence/long-run.png	지고 있는 팀은 보이는 작은 보너스(빗자루가 조금 빨라짐)를 받고, 점수가 같아지면 사라진다.	'추격 보너스: 빗자루 +8%' 배지, 속도 배율(319), 동점이 되면 사라짐
+checklist	C5	not_assessed	-	*(provisional)*	게임 내용이 아니라 브리프의 표시 '(provisional)'라 확인할 것이 없음
+webgl	ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)
+browser	HeadlessChrome/153.0.0.0
+console	play	2077	[.WebGL-0xf14001b3600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+scene	play	0	title
+scene	play	1	play
+digits	log	600 19px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "WenQuanYi Zen Hei", sans-serif	tabular	0
+digits	log	800 34px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "WenQuanYi Zen Hei", sans-serif	tabular	0
+digits	log	800 30px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "WenQuanYi Zen Hei", sans-serif	tabular	0
+digits	log	600 16px "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "WenQuanYi Zen Hei", sans-serif	tabular	0
+measure	step-time	play	0.073	3.100	252
+lane	play	stop	4.2	888
+console	play	0	[.WebGL-0xf14001b3600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console	play	0	[.WebGL-0xf14001b3600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+uncaught	play	0
+text	play	canvas	449,22,497,38	24.0	10.80	inside	등불매
+text	play	canvas	510,40,530,66	48.0	18.21	inside	0
+text	play	canvas	748,22,830,38	24.0	10.67	inside	폭풍까마귀
+text	play	canvas	750,40,770,66	48.0	18.21	inside	0
+text	play	canvas	609,32,671,55	43.5	18.21	inside	3:56
+text	play	canvas	582,89,699,104	22.5	16.22	inside	글리머까지 0:56
+text	play	canvas	35,641,215,658	25.5	10.80	inside	득점수 · 공을 가졌어요
+text	play	canvas	34,687,63,702	21.0	15.85	inside	가속
+text	play	canvas	393,134,885,153	27.0	17.46	inside	Space를 길게 눌렀다 떼면 파워 슛: 노란 칸에서 떼면 완벽!
+screen	play	drawn
+shot	play	prototypes/skyhoop/evidence/play.png
+responds	changed	4
