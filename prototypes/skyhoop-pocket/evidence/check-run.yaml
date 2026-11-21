@@ -1,0 +1,148 @@
+# The one-shot's small check (check-run/1).
+# Written by one-shot-check.sh --record: the results are /prototype's reading of
+# evidence/self-check.tsv; never edited by hand.
+kind: check-run/1
+engine: web
+browser: "HeadlessChrome/153.0.0.0"
+time: "2026-11-21 14:09:26"
+checks:
+  - id: boots
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: shot
+    result: pass
+    evidence:
+      - "evidence/play.png"
+  - id: outlines
+    result: pass
+    evidence:
+      - "evidence/figures.png"
+  - id: brief-words
+    result: pass
+    why: "missed; 3d: 사용자가 3D 대신 2D를 원해서 3D는 쓰지 않음 (Avoid)"
+    evidence:
+      - "evidence/brief-words.tsv"
+  - id: emoji
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: nearest-game
+    result: pass
+    evidence:
+      - "evidence/nearest-game.txt"
+brief_checklist:
+  - id: L1
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Look: 원조 게임보이 느낌의 4색 노랑초록 도트. 가장 밝은 색은 하늘, 두 번째는 구름과 먼 탑, 세 번째는 관중석과 상대 팀, 가장 어두운 색은 외곽선과 럼블러. 우리 팀 '등불매'는 밝은 망토와 둥근 두건, 상대 '폭풍까마귀'는 어두운 망토와 뾰족 모자에 부리. 굵은 픽셀, 작은 화면 비율, 외곽선 1픽셀, 음영 없음. 대표 디테일: 고리 위 등불이 골 때 깜빡이고 아래 관중석이 한꺼번에 뛰어오른다. 모든 선수와 공은 도트로 그리고, 이모지나 그냥 동그라미는 쓰지 않는다. *(provisional)*"
+  - id: L2
+    result: pass
+    evidence: "evidence/title.png"
+    item: "References: 없음 (게임보이는 화면 느낌만; 기기 모양과 로고는 그리지 않는다)"
+  - id: L3
+    result: pass
+    evidence: "evidence/play.png"
+    item: "View: 2D · Camera: 옆에서 보는 화면이 내 선수를 따라 좌우로 스크롤, 160x144 원본 해상도를 정수배로 키움 *(provisional)*"
+  - id: F1
+    result: pass
+    evidence: "index.html:321"
+    item: "옆에서 보는 2D 비행: 8방향 이동과 약간의 관성, 돌진(B)"
+  - id: F2
+    result: pass
+    evidence: "index.html:296"
+    item: "2 대 2 (나와 AI 동료) + 팀마다 골키퍼 AI"
+  - id: F3
+    result: pass
+    evidence: "index.html:385"
+    item: "볼라 패스, 돌진으로 빼앗기, 완벽 구간이 있는 충전 슛; 양쪽 끝에 고리 3개씩"
+  - id: F4
+    result: pass
+    evidence: "index.html:478"
+    item: "럼블러 2개: 튀어 다니며 공 가진 선수를 노리고, 맞으면 공을 놓치고 휘청"
+  - id: F5
+    result: pass
+    evidence: "index.html:519"
+    item: "글리머: 40초에 등장, 이리저리 달아나고, 상대도 쫓고, 잡으면 +50점과 경기 끝"
+  - id: F6
+    result: pass
+    evidence: "evidence/long-run.png"
+    item: "점수와 시계, 지는 팀 보너스, 결과 화면과 다시 하기"
+  - id: F7
+    result: not_run
+    mark: not assessed
+    why: "도트 그림, 등불 깜빡임과 관중 점프(732)는 코드와 화면에 있음; 삑삑 효과음(263)은 들어 볼 수 없어 확인 못 함"
+    evidence: "index.html:724"
+    item: "4색 도트 그림, 골 등불과 관중 연출, 삑삑 효과음"
+  - id: F8
+    result: pass
+    evidence: "evidence/title.png"
+    item: "휴대폰 터치 조작: 십자키와 A·B·START, 세로 화면"
+  - id: S1
+    result: pass
+    evidence: "index.html:408"
+    item: "득점 (볼라와 고리) · in the slice"
+  - id: S2
+    result: pass
+    evidence: "index.html:478"
+    item: "방해 공 (럼블러) · in the slice"
+  - id: S3
+    result: pass
+    evidence: "evidence/long-run.png"
+    item: "황금 공 추격 (글리머) · in the slice"
+  - id: S4
+    result: pass
+    evidence: "evidence/title.png"
+    item: "휴대폰 터치 조작 · in the slice"
+  - id: M1
+    result: pass
+    evidence: "index.html:296"
+    item: "경기장 가운데서 볼라를 들고 시작한다."
+  - id: M2
+    result: pass
+    evidence: "evidence/play.png"
+    item: "방향키로 위아래 좌우로 날아 보고, A를 짧게 눌러 동료에게 패스하면 동료가 앞으로 날아가 다시 돌려준다."
+  - id: M3
+    result: pass
+    evidence: "evidence/play.png"
+    item: "오른쪽 끝 고리 셋이 보이면 A를 길게 눌렀다 떼서 슛, 노란 칸에서 떼면 완벽한 슛으로 첫 골이 들어가고 등불이 깜빡이며 관중이 뛴다."
+  - id: M4
+    result: pass
+    evidence: "index.html:473"
+    item: "그 사이 럼블러 하나가 튀어 와서, 피하거나 맞으면 공을 떨어뜨린다."
+  - id: M5
+    result: pass
+    evidence: "index.html:519"
+    item: "40초에 종소리와 함께 글리머가 나타나 쫓기 시작한다."
+  - id: M6
+    result: not_run
+    mark: not assessed
+    why: "게임 내용이 아니라 브리프의 표시라 확인할 게 없음"
+    item: "*(guessed)*"
+  - id: C1
+    result: pass
+    evidence: "index.html:613"
+    item: "처음 30초는 상대가 느슨하게 막는다."
+  - id: C2
+    result: pass
+    evidence: "index.html:461"
+    item: "1분쯤부터 상대가 돌진해 공을 빼앗고, 패스를 가로채고, 럼블러가 둘 다 공 가진 선수를 노리고, 상대 선수 하나가 글리머를 쫓는다."
+  - id: C3
+    result: pass
+    evidence: "evidence/long-run.png"
+    item: "지면 결과 화면에서 바로 다시 한다."
+  - id: C4
+    result: pass
+    evidence: "index.html:351"
+    item: "지고 있는 팀은 반짝이가 붙고 조금 빨라지며, 점수가 같아지면 사라진다."
+  - id: C5
+    result: not_run
+    mark: not assessed
+    why: "게임 내용이 아니라 브리프의 표시라 확인할 게 없음"
+    item: "*(provisional)*"
+measures:
+  - id: step-time
+    value: 4.600
+    unit: ms
+    by: browser
+    detail: "mean 0.082 ms, slowest 4.600 ms, 234 steps"

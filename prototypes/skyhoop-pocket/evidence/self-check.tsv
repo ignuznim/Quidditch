@@ -1,0 +1,40 @@
+time	2026-11-21 14:09:26
+keep	lines	1	pinned	0
+keep	1	unpinned	빗자루를 타고 하늘에서 하는 공중 구기, 세 종류의 공, 새로 지은 이름 *(from 스카이훅's pivot note)*
+briefword	3d	missed	사용자가 3D 대신 2D를 원해서 3D는 쓰지 않음 (Avoid)
+briefword	2d	shown	evidence/play.png
+checklist	L1	unlisted	-	Look: 원조 게임보이 느낌의 4색 노랑초록 도트. 가장 밝은 색은 하늘, 두 번째는 구름과 먼 탑, 세 번째는 관중석과 상대 팀, 가장 어두운 색은 외곽선과 럼블러. 우리 팀 '등불매'는 밝은 망토와 둥근 두건, 상대 '폭풍까마귀'는 어두운 망토와 뾰족 모자에 부리. 굵은 픽셀, 작은 화면 비율, 외곽선 1픽셀, 음영 없음. 대표 디테일: 고리 위 등불이 골 때 깜빡이고 아래 관중석이 한꺼번에 뛰어오른다. 모든 선수와 공은 도트로 그리고, 이모지나 그냥 동그라미는 쓰지 않는다. *(provisional)*	
+checklist	L2	unlisted	-	References: 없음 (게임보이는 화면 느낌만; 기기 모양과 로고는 그리지 않는다)	
+checklist	L3	unlisted	-	View: 2D · Camera: 옆에서 보는 화면이 내 선수를 따라 좌우로 스크롤, 160x144 원본 해상도를 정수배로 키움 *(provisional)*	
+checklist	F1	unlisted	-	옆에서 보는 2D 비행: 8방향 이동과 약간의 관성, 돌진(B)	
+checklist	F2	unlisted	-	2 대 2 (나와 AI 동료) + 팀마다 골키퍼 AI	
+checklist	F3	unlisted	-	볼라 패스, 돌진으로 빼앗기, 완벽 구간이 있는 충전 슛; 양쪽 끝에 고리 3개씩	
+checklist	F4	unlisted	-	럼블러 2개: 튀어 다니며 공 가진 선수를 노리고, 맞으면 공을 놓치고 휘청	
+checklist	F5	unlisted	-	글리머: 40초에 등장, 이리저리 달아나고, 상대도 쫓고, 잡으면 +50점과 경기 끝	
+checklist	F6	unlisted	-	점수와 시계, 지는 팀 보너스, 결과 화면과 다시 하기	
+checklist	F7	unlisted	-	4색 도트 그림, 골 등불과 관중 연출, 삑삑 효과음	
+checklist	F8	unlisted	-	휴대폰 터치 조작: 십자키와 A·B·START, 세로 화면	
+checklist	S1	unlisted	-	득점 (볼라와 고리) · in the slice	
+checklist	S2	unlisted	-	방해 공 (럼블러) · in the slice	
+checklist	S3	unlisted	-	황금 공 추격 (글리머) · in the slice	
+checklist	S4	unlisted	-	휴대폰 터치 조작 · in the slice	
+checklist	M1	unlisted	-	경기장 가운데서 볼라를 들고 시작한다.	
+checklist	M2	unlisted	-	방향키로 위아래 좌우로 날아 보고, A를 짧게 눌러 동료에게 패스하면 동료가 앞으로 날아가 다시 돌려준다.	
+checklist	M3	unlisted	-	오른쪽 끝 고리 셋이 보이면 A를 길게 눌렀다 떼서 슛, 노란 칸에서 떼면 완벽한 슛으로 첫 골이 들어가고 등불이 깜빡이며 관중이 뛴다.	
+checklist	M4	unlisted	-	그 사이 럼블러 하나가 튀어 와서, 피하거나 맞으면 공을 떨어뜨린다.	
+checklist	M5	unlisted	-	40초에 종소리와 함께 글리머가 나타나 쫓기 시작한다.	
+checklist	M6	unlisted	-	*(guessed)*	
+checklist	C1	unlisted	-	처음 30초는 상대가 느슨하게 막는다.	
+checklist	C2	unlisted	-	1분쯤부터 상대가 돌진해 공을 빼앗고, 패스를 가로채고, 럼블러가 둘 다 공 가진 선수를 노리고, 상대 선수 하나가 글리머를 쫓는다.	
+checklist	C3	unlisted	-	지면 결과 화면에서 바로 다시 한다.	
+checklist	C4	unlisted	-	지고 있는 팀은 반짝이가 붙고 조금 빨라지며, 점수가 같아지면 사라진다.	
+checklist	C5	unlisted	-	*(provisional)*	
+browser	HeadlessChrome/153.0.0.0
+scene	play	0	title
+scene	play	1	play
+measure	step-time	play	0.082	4.600	234
+lane	play	stop	3.9	73
+uncaught	play	0
+screen	play	drawn
+shot	play	prototypes/skyhoop-pocket/evidence/play.png
+responds	changed	4
