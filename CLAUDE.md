@@ -42,6 +42,10 @@ after it runs `project.yaml` holds the real values.
 
 @.claude/docs/coordination-rules.md
 
+## Language
+
+@.claude/rules/language.md
+
 ## Collaboration Protocol
 
 **User-driven collaboration, not autonomous execution.**
