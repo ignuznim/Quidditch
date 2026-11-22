@@ -14,80 +14,74 @@
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none;
     font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif; }
   body { font-variant-numeric: tabular-nums; }
-  /* The handheld: a classic grey brick, drawn here in our own name. Its buttons drive the game's keys. */
-  #device { position: absolute; touch-action: none; border-radius: 16px 16px 72px 16px;
-    background: linear-gradient(170deg, #d6d4cd 0%, #c8c6bf 40%, #bdbbb3 100%);
-    box-shadow: inset 0 2px 0 #eeece6, inset 0 -5px 0 #9f9d96, inset -4px 0 0 #a9a79f, 0 20px 44px rgba(0,0,0,0.6); }
-  .groove { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid #a8a69f; border-bottom: 1px solid #e9e7e1; }
-  .groove-v { position: absolute; width: 0; border-left: 2px solid #a8a69f; border-right: 1px solid #e9e7e1; }
-  .offon { position: absolute; color: #8e8c86; font: italic 800 10px Arial, Helvetica, sans-serif; letter-spacing: 0.08em; }
-  #bezel { position: absolute; background: #5d5f72; border-radius: 10px 10px 42px 10px; box-shadow: inset 0 1px 0 #6f7186, inset 0 -2px 0 #4a4c5c; }
-  #bezel .stripe { position: absolute; height: 2px; }
-  #bezel .stripetext { position: absolute; color: #d0cec8; font: italic 700 9px Arial, Helvetica, sans-serif; letter-spacing: 0.05em;
-    background: #5d5f72; padding: 0 5px; white-space: nowrap; transform: translate(-50%, -50%); }
-  #bezel .led { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: #ff3b3b;
-    box-shadow: 0 0 6px #ff3b3b, inset 0 -1px 0 #a01818; }
-  #bezel .ledlabel { position: absolute; color: #c8c6c0; font: 700 7px Arial, Helvetica, sans-serif; letter-spacing: 0.06em; transform: translateX(-50%); }
-  .brand { position: absolute; color: #2b3480; white-space: nowrap; font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
-    font-style: italic; font-weight: 900; letter-spacing: 0.02em; }
-  .brand small { font-weight: 700; letter-spacing: 0.04em; margin-right: 0.4em; }
-  #screen { position: absolute; background: #000; box-shadow: 0 0 0 2px #2f303d; }
+  /* The handheld: the classic grey brick, laid out from a photo of the real thing, in our own name.
+     Every size below is set from the body's width in fit(), so it keeps its proportions on any screen. */
+  #device { position: absolute; touch-action: none;
+    background: linear-gradient(175deg, #dddcd7 0%, #d0cfca 45%, #c6c5bf 100%);
+    box-shadow: inset 0 2px 0 #f1f0ec, inset -3px -4px 0 #aeada7, 0 22px 46px rgba(0,0,0,0.6); }
+  .groove { position: absolute; height: 0; border-top: 2px solid #b4b3ad; border-bottom: 1px solid #ecebe6; }
+  .groove-v { position: absolute; width: 0; border-left: 2px solid #b4b3ad; border-right: 1px solid #ecebe6; }
+  .offon { position: absolute; color: #b9b8b2; font-family: Arial, Helvetica, sans-serif; font-weight: 700; letter-spacing: 0.05em;
+    text-shadow: 0 1px 0 #efeee9, 0 -1px 0 #a9a8a2; white-space: nowrap; }
+  #bezel { position: absolute; background: #8d8f9b; box-shadow: inset 0 1px 0 #a3a5b0, inset 0 -1px 0 #777985; }
+  #bezel .stripe { position: absolute; }
+  #bezel .stripetext { position: absolute; color: #e2e1dc; font-family: Arial, Helvetica, sans-serif; font-weight: 400; letter-spacing: 0.06em;
+    background: #8d8f9b; white-space: nowrap; transform: translate(-50%, -50%); }
+  #bezel .led { position: absolute; border-radius: 50%; background: #e03535; box-shadow: 0 0 5px #ff4d4d, inset 0 -1px 0 #8a1414; }
+  #bezel .ledlabel { position: absolute; color: #e2e1dc; font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.04em; transform: translateX(-50%); white-space: nowrap; }
+  .brand { position: absolute; color: #263080; white-space: nowrap; line-height: 1; }
+  .brand .small { font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; font-weight: 900; letter-spacing: -0.01em; }
+  .brand .big { font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif; font-style: italic; font-weight: 800; letter-spacing: 0.01em; }
+  .brand sup { font-family: Arial, sans-serif; font-weight: 700; }
+  #screen { position: absolute; background: #000; box-shadow: 0 0 0 1px #5f616c; }
   #screen canvas { display: block; position: absolute; left: 0; top: 0; touch-action: none; }
   #game { image-rendering: pixelated; image-rendering: crisp-edges; }
   #hud { pointer-events: none; }
   #pad { position: absolute; inset: 0; pointer-events: none; }
-  #pad > * { pointer-events: auto; }
-  #pad > .lab, #pad > .hint, #pad > .grille, #pad > .well { pointer-events: none; }
-  .well { position: absolute; border-radius: 50%; background: radial-gradient(circle, #b5b3ab 55%, #c4c2ba 70%, transparent 71%); }
-  .dpad { position: absolute; width: 150px; height: 150px; transform-origin: 0 0; filter: drop-shadow(0 4px 0 #6f6d68); }
-  .dpad .arm { position: absolute; background: linear-gradient(180deg, #2c2c33, #17171c); border-radius: 6px; }
-  .dpad .h { left: 0; top: 50px; width: 150px; height: 50px; }
-  .dpad .v { left: 50px; top: 0; width: 50px; height: 150px; }
-  .dpad .hub { position: absolute; left: 61px; top: 61px; width: 28px; height: 28px; border-radius: 50%;
-    background: radial-gradient(circle at 50% 40%, #121216, #2a2a31); }
-  .dpad .tip { position: absolute; width: 0; height: 0; border: 8px solid transparent; }
-  .dpad .up { left: 67px; top: 10px; border-bottom-color: #44444e; }
-  .dpad .dn { left: 67px; bottom: 10px; border-top-color: #44444e; }
-  .dpad .lf { left: 10px; top: 67px; border-right-color: #44444e; }
-  .dpad .rt { right: 10px; top: 67px; border-left-color: #44444e; }
-  .dpad.on-up .up { border-bottom-color: #9a9aa8; } .dpad.on-dn .dn { border-top-color: #9a9aa8; }
-  .dpad.on-lf .lf { border-right-color: #9a9aa8; } .dpad.on-rt .rt { border-left-color: #9a9aa8; }
-  .btn { position: absolute; border-radius: 50%; background: radial-gradient(circle at 40% 32%, #c8357a, #9c1b55 62%, #7c1243);
-    box-shadow: 0 4px 0 #5e0e33, 0 6px 6px rgba(0,0,0,0.25); }
-  .btn.down { transform: translateY(3px); box-shadow: 0 1px 0 #5e0e33; filter: brightness(0.92); }
-  .btn-well { position: absolute; border-radius: 999px; background: #b3b1a9; box-shadow: inset 0 2px 3px rgba(0,0,0,0.18); transform-origin: 50% 50%; pointer-events: none !important; }
-  .lab { position: absolute; color: #2b3480; font: italic 900 15px "Arial Black", Arial, sans-serif; transform: translateX(-50%); white-space: nowrap; }
-  .hint { position: absolute; color: #6f6d78; font-size: 10px; font-weight: 700; transform: translateX(-50%); white-space: nowrap; }
-  .pill { position: absolute; width: 50px; height: 14px; border-radius: 7px; background: linear-gradient(180deg, #9a98a2, #7c7a84);
-    border: 2px solid #6a6872; transform: rotate(-25deg); box-shadow: 0 2px 0 #77757e; }
-  .pill.down { transform: rotate(-25deg) translateY(2px); box-shadow: none; filter: brightness(0.9); }
-  .grille { position: absolute; }
-  .grille i { position: absolute; width: 6px; border-radius: 3px; background: #9b998f; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.35); transform: rotate(-30deg); }
+  #pad > .dpad, #pad > .btn, #pad > .pill { pointer-events: auto; }
+  /* the d-pad: one cross-shaped piece, so the arms never show a seam */
+  .dpad { position: absolute; filter: drop-shadow(0 3px 0 #77767a) drop-shadow(0 1px 2px rgba(0,0,0,0.4)); }
+  .dpad .cross { position: absolute; inset: 0; background: linear-gradient(160deg, #3b3c45 0%, #26272e 55%, #1b1c21 100%);
+    clip-path: polygon(33.5% 0, 66.5% 0, 66.5% 33.5%, 100% 33.5%, 100% 66.5%, 66.5% 66.5%, 66.5% 100%, 33.5% 100%, 33.5% 66.5%, 0 66.5%, 0 33.5%, 33.5% 33.5%);
+    border-radius: 4px; }
+  .dpad .dimple { position: absolute; left: 39%; top: 39%; width: 22%; height: 22%; border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%, #15161a, #2c2d35 75%); }
+  .dpad .ar { position: absolute; width: 0; height: 0; border-style: solid; border-color: transparent; opacity: 0.55; }
+  .dpad.on-up .cross { background: linear-gradient(0deg, #3b3c45 30%, #17181c 100%); }
+  .dpad.on-dn .cross { background: linear-gradient(180deg, #3b3c45 30%, #17181c 100%); }
+  .dpad.on-lf .cross { background: linear-gradient(270deg, #3b3c45 30%, #17181c 100%); }
+  .dpad.on-rt .cross { background: linear-gradient(90deg, #3b3c45 30%, #17181c 100%); }
+  .btn { position: absolute; border-radius: 50%; background: radial-gradient(circle at 42% 34%, #d8478a, #b3245f 60%, #8f1a4b);
+    box-shadow: 0 3px 0 #6e1238, 0 4px 5px rgba(0,0,0,0.3); }
+  .btn.down { transform: translateY(2px); box-shadow: 0 1px 0 #6e1238; filter: brightness(0.92); }
+  .lab { position: absolute; color: #263080; font-family: Arial, Helvetica, sans-serif; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap; transform-origin: 50% 50%; }
+  .pill { position: absolute; border-radius: 999px; background: linear-gradient(180deg, #a9a8b0, #8e8d96);
+    box-shadow: inset 0 1px 0 #c2c1c8, 0 2px 0 #7b7a83; transform-origin: 50% 50%; }
+  .pill.down { filter: brightness(0.88); box-shadow: inset 0 1px 0 #c2c1c8; }
+  .slot { position: absolute; border-radius: 999px; background: linear-gradient(90deg, #a6a59f, #8f8e88); box-shadow: inset 1px 1px 2px rgba(0,0,0,0.35), 1px 1px 0 #e6e5e0; transform-origin: 50% 50%; }
+  .notch { position: absolute; border-radius: 999px; border: 2px solid #b8b7b1; box-shadow: inset 0 1px 0 #eceae5; }
 </style>
 </head>
 <body>
 <div id="device">
   <div class="groove" id="groove"></div><div class="groove-v" id="grooveL"></div><div class="groove-v" id="grooveR"></div>
-  <div class="offon" id="offon">&#9664; OFF&middot;ON &#9654;</div>
+  <div class="offon" id="offon">&#9664;OFF&middot;ON&#9654;</div>
   <div id="bezel">
-    <div class="stripe" id="s1" style="background:#8c2e52"></div><div class="stripe" id="s2" style="background:#2e3378"></div>
-    <div class="stripetext" id="stext">PIXEL SKY WITH SQUARE-WAVE SOUND</div>
+    <div class="stripe" id="s1" style="background:#8e2c5a"></div><div class="stripe" id="s2" style="background:#2b2f74"></div>
+    <div class="stripetext" id="stext">PIXEL SKY WITH SQUARE SOUND</div>
     <div class="led"></div><div class="ledlabel">POWER</div>
     <div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
   </div>
-  <div class="brand" id="brand"><small>QUIDDITCH</small>POCKET</div>
+  <div class="brand" id="brand"><span class="small">Quidditch</span> <span class="big">POCKET</span></div>
   <div id="pad">
-    <div class="well" id="dwell"></div>
-    <div class="dpad" id="dpad"><div class="arm h"></div><div class="arm v"></div><div class="hub"></div>
-      <div class="tip up"></div><div class="tip dn"></div><div class="tip lf"></div><div class="tip rt"></div></div>
-    <div class="btn-well" id="abwell"></div>
+    <div class="dpad" id="dpad"><div class="cross"></div><div class="dimple"></div>
+      <div class="ar" id="arU"></div><div class="ar" id="arD"></div><div class="ar" id="arL"></div><div class="ar" id="arR"></div></div>
     <div class="btn" id="bB"></div><div class="btn" id="bA"></div>
     <div class="lab" id="lB">B</div><div class="lab" id="lA">A</div>
-    <div class="hint" id="hB">몸 날리기</div><div class="hint" id="hA">패스·던지기</div>
     <div class="pill" id="bMute"></div><div class="pill" id="bStart"></div>
     <div class="lab" id="lMute">SELECT</div><div class="lab" id="lStart">START</div>
-    <div class="hint" id="hMute">소리</div><div class="hint" id="hStart">일시정지</div>
-    <div class="grille" id="grille"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div id="grille"></div>
+    <div class="notch" id="notchB"></div>
   </div>
 </div>
 <script src="config.js"></script>
@@ -105,8 +99,8 @@ const W = 208, H = 160;         // the pixel screen: a close view, so riders rea
 const PIXEL = true;             // crisp scale, no smoothing
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif';
 const TITLE = '퀴디치 포켓';
-const CONTROLS = ['당신은 그리핀도르 파수꾼!', '방향키: 이동 · X: 몸 날려 막기', 'Z: 짧게 패스, 길게 멀리 던지기', 'Enter: 일시정지 · M: 소리'];
-const TOUCH_CONTROLS = ['당신은 그리핀도르 파수꾼!', '십자키: 이동 · B: 몸 날려 막기', 'A: 짧게 패스, 길게 멀리 던지기', 'START: 일시정지 · SELECT: 소리'];
+const CONTROLS = ['당신은 그리핀도르 수색꾼!', '방향키: 날기 · Z/X: 돌진', '골든 스니치를 먼저 잡으면 +150', 'Enter: 일시정지 · M: 소리'];
+const TOUCH_CONTROLS = ['당신은 그리핀도르 수색꾼!', '십자키: 날기 · A/B: 돌진', '골든 스니치를 먼저 잡으면 +150', 'START: 일시정지 · SELECT: 소리'];
 const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
 const CHEAP = params.get('render') === 'cheap';
 let seed;
@@ -138,70 +132,65 @@ let touchMode = params.get('touch') === '1' || matchMedia('(pointer: coarse)').m
 let hudScale = 1, shakeX = 0;
 const deviceEl = document.getElementById('device'), bezelEl = document.getElementById('bezel');
 const place = (el, x, y, w, h) => { el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px'; if (w != null) el.style.width = Math.round(w) + 'px'; if (h != null) el.style.height = Math.round(h) + 'px'; };
-/** Lays out the handheld for the window: upright (screen on top, buttons below) or wide (buttons either side). */
+/** Lays out the handheld from the proportions of the real one (width 90 : height 148), at any window size. */
 function fit() {
-  const iw = innerWidth, ih = innerHeight, wide = iw > ih * 1.15, dpr = devicePixelRatio || 1;
-  let Dw, Dh, side = 0;
-  if (wide) { Dh = Math.min(ih, 640); Dw = Math.min(iw, Dh * 2.3); side = Math.min(Dw * 0.21, Dh * 0.48); }
-  else { Dw = Math.min(iw, ih * 0.6, 540); Dh = Math.min(ih, Dw * 1.78); }
-  const u = wide ? Dh / 100 : Dw / 100; // one layout unit
-  const rimX = wide ? side : u * 6, top = wide ? u * 7 : u * 10;
-  const bpX = u * (wide ? 8 : 9), bpT = u * (wide ? 4.5 : 7), bpB = u * (wide ? 4 : 6);
-  const maxW = Dw - 2 * rimX - 2 * bpX, maxH = wide ? Dh - top - bpT - bpB - u * 16 : Dh * 0.42;
-  const k = Math.min(maxW / W, maxH / H);
-  // CSS pixels per art pixel: a whole number of device pixels, unless the screen is dense enough
-  // (3 or more device pixels per art pixel) that an uneven pixel cannot be seen
-  const s = k * dpr >= 3 ? k : Math.max(1, Math.floor(k * dpr)) / dpr;
-  const cw = Math.round(W * s), ch = Math.round(H * s);
+  const iw = innerWidth, ih = innerHeight, dpr = devicePixelRatio || 1;
+  const Dw = Math.min(iw, ih * 0.608, 560), Dh = Math.min(ih, Dw / 0.608);
+  const u = Dw / 100; // one per cent of the body's width
   place(deviceEl, (iw - Dw) / 2, (ih - Dh) / 2, Dw, Dh);
-  deviceEl.style.borderRadius = `${u * 3}px ${u * 3}px ${u * (wide ? 10 : 15)}px ${u * 3}px`;
-  // the top groove and the OFF-ON mark
-  place(document.getElementById('groove'), 0, u * 5.5); place(document.getElementById('grooveL'), u * 6, 0, null, u * 5.5); place(document.getElementById('grooveR'), Dw - u * 6, 0, null, u * 5.5);
-  const offon = document.getElementById('offon'); place(offon, u * 9, u * 1.4); offon.style.fontSize = Math.max(8, u * 2.3) + 'px';
-  // the bezel: two stripes and a line of text along its top, the power light, the screen
-  const bw = cw + 2 * bpX, bh = ch + bpT + bpB;
-  const bx = (Dw - bw) / 2, by = top;
-  place(bezelEl, bx, by, bw, bh); bezelEl.style.borderRadius = `${u * 2}px ${u * 2}px ${u * 9}px ${u * 2}px`;
-  const sy = bpT * 0.45;
-  place(document.getElementById('s1'), u * 2, sy - 2, bw - u * 4, 2); place(document.getElementById('s2'), u * 2, sy + 2, bw - u * 4, 2);
-  const st = document.getElementById('stext'); place(st, bw / 2, sy + 1); st.style.fontSize = Math.max(7, u * 1.8) + 'px';
-  place(screenEl, bpX, bpT, cw, ch);
-  const led = bezelEl.querySelector('.led'); place(led, bpX / 2 - 4, bpT + ch * 0.32);
-  const ll = bezelEl.querySelector('.ledlabel'); place(ll, bpX / 2, bpT + ch * 0.32 + 12); ll.style.fontSize = Math.max(6, u * 1.5) + 'px';
-  // the name under the screen
-  const brand = document.getElementById('brand'); brand.style.fontSize = Math.round(u * (wide ? 5 : 5.2)) + 'px';
-  place(brand, bx + u * 1, by + bh + u * 1.2);
+  deviceEl.style.borderRadius = `${u * 2.5}px ${u * 2.5}px ${u * 22}px ${u * 2.5}px`;
+  // the top: a groove across, two short ones down, the OFF-ON mark
+  place(document.getElementById('groove'), 0, u * 5.2, Dw); place(document.getElementById('grooveL'), u * 8.5, 0, null, u * 5.2); place(document.getElementById('grooveR'), Dw - u * 8.5, 0, null, u * 5.2);
+  const offon = document.getElementById('offon'); place(offon, u * 12, u * 1.2); offon.style.fontSize = u * 2.6 + 'px';
+  // the bezel, from 8.5% to 91.5% of the width, its lower-right corner swept round
+  const bx = u * 8.5, by = u * 9.5, bw = u * 83;
+  const sw = u * 60, k0 = sw / W; // the screen: 60% of the body's width
+  let s = k0 * dpr >= 3 ? k0 : Math.max(1, Math.floor(k0 * dpr)) / dpr;
+  if (s < k0 * 0.8) s = k0; // a whole-pixel scale that would leave the screen much smaller: fill it instead
+  const cw = Math.round(W * s), ch = Math.round(H * s);
+  const bh = ch + u * 17;
+  place(bezelEl, bx, by, bw, bh); bezelEl.style.borderRadius = `${u * 2}px ${u * 2}px ${u * 12}px ${u * 2}px`;
+  place(document.getElementById('s1'), u * 3, u * 4, bw - u * 6, Math.max(1, u * 0.55)); place(document.getElementById('s2'), u * 3, u * 5.4, bw - u * 6, Math.max(1, u * 0.55));
+  const st = document.getElementById('stext'); place(st, bw / 2, u * 5.05); st.style.fontSize = u * 2.15 + 'px'; st.style.padding = `0 ${u * 1.5}px`;
+  const scrX = (bw - cw) / 2 + u * 2.5, scrY = u * 9;
+  place(screenEl, scrX, scrY, cw, ch);
+  const led = bezelEl.querySelector('.led'); place(led, u * 5.3, scrY + ch * 0.3, u * 2.2, u * 2.2);
+  const ll = bezelEl.querySelector('.ledlabel'); place(ll, u * 6.4, scrY + ch * 0.3 + u * 3.4); ll.style.fontSize = u * 1.8 + 'px';
+  // the name under the bezel, where the maker's logo sits on the real one
+  const brand = document.getElementById('brand'); place(brand, bx, by + bh + u * 4.5);
+  brand.querySelector('.small').style.fontSize = u * 4.4 + 'px'; brand.querySelector('.big').style.fontSize = u * 7.2 + 'px';
   canvas.width = W; canvas.height = H;
   for (const c of [canvas, hudCanvas]) { c.style.width = cw + 'px'; c.style.height = ch + 'px'; }
   hudScale = s * dpr;
   hudCanvas.width = Math.round(W * hudScale); hudCanvas.height = Math.round(H * hudScale);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
-  // the controls
-  const ctop = by + bh + u * 8, ch2 = Dh - ctop;
-  const ds = Math.min(160, u * (wide ? 30 : 32)), aS = u * (wide ? 12 : 13);
-  let dx, dy, ax, ay, bx2, by2, selX, startX, pillY;
-  if (wide) { dx = side / 2; dy = Dh * 0.48; ax = Dw - side * 0.28; ay = Dh * 0.42; bx2 = Dw - side * 0.62; by2 = Dh * 0.52; selX = side * 0.35; startX = side * 0.75; pillY = Dh * 0.82; }
-  else { dx = Dw * 0.24; dy = ctop + ch2 * 0.24; ax = Dw * 0.82; ay = ctop + ch2 * 0.16; bx2 = Dw * 0.6; by2 = ctop + ch2 * 0.27; selX = Dw * 0.38; startX = Dw * 0.6; pillY = ctop + ch2 * 0.6; }
-  if (wide) { startX = Dw - side * 0.5; selX = side * 0.5; }
-  place(document.getElementById('dwell'), dx - ds * 0.62, dy - ds * 0.62, ds * 1.24, ds * 1.24);
-  dpad.style.transform = `scale(${ds / 150})`; place(dpad, dx - ds / 2, dy - ds / 2);
-  const bA = document.getElementById('bA'), bB = document.getElementById('bB');
-  place(bA, ax - aS / 2, ay - aS / 2, aS, aS); place(bB, bx2 - aS / 2, by2 - aS / 2, aS, aS);
-  const well = document.getElementById('abwell'), wl = Math.hypot(ax - bx2, ay - by2) + aS * 1.35, ang = Math.atan2(ay - by2, ax - bx2);
-  place(well, (ax + bx2) / 2 - wl / 2, (ay + by2) / 2 - aS * 0.68, wl, aS * 1.36); well.style.transform = `rotate(${ang}rad)`;
-  const labSize = Math.max(11, u * 3.4) + 'px', hintSize = Math.max(9, u * 2.4) + 'px';
-  for (const [id, x, y] of [['lA', ax, ay + aS * 0.62], ['lB', bx2, by2 + aS * 0.62]]) { const e = document.getElementById(id); place(e, x, y); e.style.fontSize = labSize; }
-  for (const [id, x, y] of [['hA', ax, ay + aS * 0.62 + u * 4.2], ['hB', bx2, by2 + aS * 0.62 + u * 4.2]]) { const e = document.getElementById(id); place(e, x, y); e.style.fontSize = hintSize; }
-  const pw = u * 11, ph = u * 3;
-  for (const [id, x] of [['bMute', selX], ['bStart', startX]]) { const e = document.getElementById(id); place(e, x - pw / 2, pillY - ph / 2, pw, ph); }
-  for (const [id, x] of [['lMute', selX], ['lStart', startX]]) { const e = document.getElementById(id); place(e, x, pillY + u * 4.2); e.style.fontSize = Math.max(9, u * 2.4) + 'px'; }
-  for (const [id, x] of [['hMute', selX], ['hStart', startX]]) { const e = document.getElementById(id); place(e, x, pillY + u * 8); e.style.fontSize = hintSize; }
-  const gr = document.getElementById('grille');
-  if (wide) gr.style.display = 'none';
-  else {
-    gr.style.display = 'block'; place(gr, Dw - u * 30, Dh - u * 22, u * 24, u * 16);
-    [...gr.children].forEach((i, n) => { place(i, n * u * 3.6, 0, u * 1.4, u * 14); });
+  // the controls, at the real one's positions (in % of width; the body is 164.5 units tall)
+  const at = (x, y) => [x * u, y * u];
+  const ds = u * 23, [dx, dy] = at(22.5, 109);
+  place(dpad, dx - ds / 2, dy - ds / 2, ds, ds);
+  const tri = (id, dir) => { const e = document.getElementById(id), a = u * 1.6, c = '#4a4b55'; e.style.borderWidth = a + 'px';
+    e.style.borderColor = 'transparent'; e.style[`border${dir}Color`] = c;
+    if (dir === 'Bottom') { e.style.left = ds / 2 - a + 'px'; e.style.top = u * 1.2 - a + 'px'; }
+    if (dir === 'Top') { e.style.left = ds / 2 - a + 'px'; e.style.top = ds - u * 1.2 - a + 'px'; }
+    if (dir === 'Right') { e.style.top = ds / 2 - a + 'px'; e.style.left = u * 1.2 - a + 'px'; }
+    if (dir === 'Left') { e.style.top = ds / 2 - a + 'px'; e.style.left = ds - u * 1.2 - a + 'px'; } };
+  tri('arU', 'Bottom'); tri('arD', 'Top'); tri('arL', 'Right'); tri('arR', 'Left');
+  const aS = u * 11.5, [ax, ay] = at(86, 105.5), [bx2, by2] = at(70.5, 113);
+  place(document.getElementById('bA'), ax - aS / 2, ay - aS / 2, aS, aS); place(document.getElementById('bB'), bx2 - aS / 2, by2 - aS / 2, aS, aS);
+  const lab = (id, x, y, size, rot) => { const e = document.getElementById(id); e.style.fontSize = size + 'px'; e.style.left = '0px'; e.style.top = '0px';
+    const w = e.offsetWidth, h = e.offsetHeight; place(e, x - w / 2, y - h / 2); e.style.transform = `rotate(${rot}deg)`; };
+  lab('lA', ax + u * 3.5, ay + aS / 2 + u * 3.6, u * 3.2, 0); lab('lB', bx2 + u * 3.5, by2 + aS / 2 + u * 3.6, u * 3.2, 0);
+  // SELECT and START: slanted rubber keys, their names printed below on the same slant
+  const pw = u * 12, ph = u * 3.6, rot = -25;
+  for (const [id, lid, x, y] of [['bMute', 'lMute', 37, 135], ['bStart', 'lStart', 54, 135]]) {
+    const e = document.getElementById(id); place(e, x * u - pw / 2, y * u - ph / 2, pw, ph); e.style.transform = `rotate(${rot}deg)`;
+    lab(lid, x * u - u * 1.8, y * u + u * 6, u * 2.6, rot);
   }
+  // the speaker: six slanted slots in the lower right, and the notch at the bottom
+  const gr = document.getElementById('grille');
+  if (!gr.children.length) for (let i = 0; i < 6; i++) { const e = document.createElement('div'); e.className = 'slot'; gr.appendChild(e); }
+  [...gr.children].forEach((e, i) => { place(e, u * (69 + i * 4.4), u * 133, u * 1.7, u * 20); e.style.transform = 'rotate(-30deg)'; });
+  place(document.getElementById('notchB'), Dw / 2 - u * 9, Dh - u * 4.6, u * 18, u * 3.4);
 }
 addEventListener('resize', fit);
 function rect(x, y, w, h, c) { ctx.fillStyle = col(c); ctx.fillRect(Math.round(x), Math.round(y), w, h); }
@@ -323,7 +312,7 @@ function bindButton(id, code) {
 bindButton('bA', 'KeyZ'); bindButton('bB', 'KeyX'); bindButton('bStart', 'Enter'); bindButton('bMute', 'KeyM');
 canvas.addEventListener('pointerdown', e => { // a tap on the screen starts and restarts
   if (e.pointerType !== 'mouse') touchMode = true;
-  if (scene === 'title' || scene === 'results' || scene === 'pause') hit.add('Enter');
+  if (scene !== 'play') hit.add('Enter');
 });
 addEventListener('contextmenu', e => e.preventDefault());
 // iPhone Safari ignores the viewport's zoom lock: stop double-tap and pinch zoom here
@@ -376,9 +365,9 @@ const TOP = 16, FLOOR = 134, MID = 78, HOOP_Y = [54, 78, 102];
 const hoopX = side => side > 0 ? tune.fieldWidth - 16 : 16; // side +1: the right end, which 그리핀도르 attacks
 let scene, state;
 // Seven a side, as in the books: a keeper, three chasers, two beaters and a seeker.
-// You are 그리핀도르's keeper (rider 0), guarding the left hoops.
+// You are 그리핀도르's seeker (rider 6): find the golden snitch and catch it before 슬리데린's seeker.
 const ROLES = ['keeper', 'chaser', 'chaser', 'chaser', 'beater', 'beater', 'seeker'];
-const ME = 0;
+const ME = 6;
 function mkRider(id, team, role, slot, x, y) {
   return { id, team, role, slot, x, y, px: x, py: y, vx: 0, vy: 0, face: team === 0 ? 1 : -1, stun: 0, dashT: 0, dashCd: 0,
     dx: 0, dy: 0, immune: 0, holdT: 0, robbed: false, aiT: 0, sx: x, sy: y, bob: id * 1.7, batCd: 0, swing: 0 };
@@ -409,7 +398,7 @@ function reset() {
     camX: 0, camPX: 0, shake: 0,
     charging: false, holdT: 0, actPrev: false, buffer: 0,
     msgs: [], lantern: { '1': 0, '-1': 0 }, cheer: 0, tut: 0, tutMoved: 0, glimmerNote: 0, resultsT: 0,
-    stats: { saves: 0, conceded: 0, passes: 0, hits: 0, goals: 0 },
+    stats: { dashes: 0, conceded: 0, hits: 0, goals: 0 },
   };
   state.camX = state.camPX = clamp(R[ME].x - W / 2 + 40, 0, fw - W);
 }
@@ -523,7 +512,7 @@ function goal(side, i) {
   state.lantern[String(side)] = 1.4; state.cheer = 1.4; state.hoopHit = { side, i, t: 1.4 };
   events.push({ type: 'goal', team, hoop: i, t: state.t });
   if (team === 0) { state.stats.goals++; SFX.goal(); msg('그리핀도르 골! +' + tune.goalPoints, 1.8); }
-  else { state.stats.conceded++; state.shake = 0.3; SFX.conceded(); msg('실점…', 1.4); }
+  else { state.stats.conceded++; SFX.conceded(); msg('슬리데린 골…', 1.4); }
   const keeper = RD().find(k => k.role === 'keeper' && k.team !== team);
   give(keeper, 'restart'); keeper.holdT = -tune.resetDelay;
 }
@@ -649,7 +638,7 @@ function updateGlimmer(dt) {
       let gx = 0, best = -1; // appear where no seeker is close
       for (let k = 0; k < 8; k++) { const x = 20 + rng() * (tune.fieldWidth - 40), d = Math.min(...seekers.map(r => Math.abs(r.x - x))); if (d > best) { best = d; gx = x; } }
       g.active = true; g.x = gx; g.y = TOP + 14; g.px = g.x; g.py = g.y; g.turnT = 0;
-      state.glimmerNote = 3.5; SFX.bell(); msg('골든 스니치 등장!', 2); events.push({ type: 'glimmer', t: state.t });
+      state.glimmerNote = 3.5; SFX.bell(); msg('골든 스니치 등장!', 2); if (state.tut < 2) state.tut = 2; events.push({ type: 'glimmer', t: state.t });
     }
     return;
   }
@@ -661,7 +650,7 @@ function updateGlimmer(dt) {
   }
   for (const r of seekers) {
     const d = dist(r, g);
-    if (d < tune.glimmerCatch && r.stun <= 0 && state.t >= tune.glimmerAt + tune.snitchHide) { catchGlimmer(r); return; }
+    if (d < tune.glimmerCatch && r.stun <= 0 && (r.id === ME || state.t >= tune.glimmerAt + tune.snitchHide)) { catchGlimmer(r); return; }
     if (d < tune.glimmerFlee && g.dartT <= 0) {
       const ax = g.x - r.x, ay = g.y - r.y, l = Math.hypot(ax, ay) || 1, s = rng() < 0.5 ? -1 : 1;
       g.wx = ax / l + (-ay / l) * s * 0.8; g.wy = ay / l + (ax / l) * s * 0.8;
@@ -685,7 +674,7 @@ function finish(reason) {
   const [a, b] = state.score;
   state.over = true; state.endReason = reason; state.winner = a > b ? 0 : b > a ? 1 : -1;
   const head = state.winner === 0 ? '승리!' : state.winner === 1 ? '패배' : '무승부';
-  const how = reason === 'mine' ? '그리핀도르 수색꾼이 스니치를 잡았다' : reason === 'theirs' ? '슬리데린 수색꾼이 스니치를 잡았다' : '시간 종료';
+  const how = reason === 'mine' ? '당신이 골든 스니치를 잡았다!' : reason === 'theirs' ? '슬리데린 수색꾼이 스니치를 잡았다' : '시간 종료';
   state.gained = head + ' ' + how; state.resultsT = 0;
   events.push({ type: 'end', winner: state.winner, reason, score: [a, b], t: state.t });
   if (state.winner === 0) SFX.win(); else SFX.lose();
@@ -780,30 +769,9 @@ function readInput() {
   ix = clamp(ix + padDir.x, -1, 1); iy = clamp(iy + padDir.y, -1, 1);
   return { ix, iy, a: aDown(), aHit: aHit(), bHit: bHit() };
 }
-function playerAct(me, inp, dt) {
-  const b = state.ball, has = b.holder === me.id;
-  const pressedNow = inp.a && !state.actPrev, releasedNow = !inp.a && state.actPrev;
-  state.actPrev = inp.a; state.buffer = Math.max(0, state.buffer - dt);
-  if (inp.bHit && !has && startDash(me, inp.ix, inp.iy) && state.tut === 1) state.tut = 2;
-  if (has) {
-    if (pressedNow) { state.charging = true; state.holdT = 0; }
-    if (state.charging && inp.a) state.holdT += dt;
-    if (state.charging && releasedNow) {
-      state.charging = false;
-      const to = passTarget(me);
-      if (state.holdT < tune.tapTime && to) { pass(me, to); if (state.tut <= 2) state.tut = 3; }
-      else { // a long throw where the stick points (or straight ahead)
-        const c = clamp(state.holdT / tune.chargeTime, 0, 1), sp = lerp(tune.shotMin, tune.shotMax, c);
-        let dx = inp.ix, dy = inp.iy; if (!dx && !dy) dx = me.face;
-        const l = Math.hypot(dx, dy); shoot(me, dx / l * sp, dy / l * sp, false); state.ball.mode = 'free';
-        if (state.tut <= 3) state.tut = 4;
-      }
-    }
-  } else {
-    state.charging = false;
-    if (pressedNow) { startDash(me, inp.ix, inp.iy); state.buffer = 0.25; }
-  }
-  if (me.dashT > 0) tryRob(me, tune.playerSteal);
+function playerAct(me, inp, dt) { // A or B: a burst of speed, the way a seeker closes the last metres
+  const pressedNow = inp.a && !state.actPrev; state.actPrev = inp.a;
+  if ((pressedNow || inp.bHit) && startDash(me, inp.ix, inp.iy)) { state.stats.dashes++; if (state.tut === 2) state.tut = 3; }
 }
 
 // ---- The step --------------------------------------------------------------------------------
@@ -826,8 +794,9 @@ function updateMatch(dt) {
   updateRumblers(dt);
   if (!state.over) updateGlimmer(dt);
   if (state.tut === 0 && (inp.ix || inp.iy)) { state.tutMoved += dt; if (state.tutMoved > 0.8) state.tut = 1; }
-  // camera: you stay on screen, and it leans toward the quaffle
-  const b = state.ball, focus = me.x + clamp(b.x - me.x, -90, 90) * 0.6;
+  if (state.tut === 3) { state.tutMoved += dt; if (state.tutMoved > 6) state.tut = 4; }
+  // camera: you, a little ahead, leaning toward the snitch once it is out
+  const g = state.glimmer, focus = me.x + me.face * 18 + (g.active ? clamp(g.x - me.x, -80, 80) * 0.35 : 0);
   const want = clamp(focus - W / 2, 0, tune.fieldWidth - W);
   state.camX = lerp(state.camX, want, Math.min(1, 4 * dt));
   state.shake = Math.max(0, state.shake - dt); state.cheer = Math.max(0, state.cheer - dt);
@@ -930,7 +899,7 @@ function drawPlay(a) {
     if (r.dashT > 0) for (let k = 1; k <= 3; k++) rect(p.x - cx - r.dx * k * 5, p.y + 4 - r.dy * k * 3, 3, 1, 'w');
     if (trailing(r.team) && r.role === 'flyer' && Math.floor(tNow * 8 + r.id) % 3 === 0) rect(p.x - cx - r.face * 10, p.y + 5, 1, 1, 'y'); // the catch-up sparkle
     if (!blink) drawSpr(SPR_OF(r), p.x - cx, p.y + bob, r.face < 0);
-    if (r.id === 0) { // you: a little arrow above
+    if (r.id === ME) { // you: a little arrow above
       const ay = Math.round(p.y + bob - 13 + Math.sin(tNow * 6));
       rect(p.x - cx - 2, ay, 5, 1, 'y'); rect(p.x - cx - 1, ay + 1, 3, 1, 'y'); rect(p.x - cx, ay + 2, 1, 1, 'y');
       rect(p.x - cx - 3, ay - 1, 7, 1, '3');
@@ -961,7 +930,7 @@ function drawHUD() {
     const f = clamp(st.t / tune.glimmerAt, 0, 1); rect(W / 2 - 16, 12, 32, 2, '#3b2f5c'); rect(W / 2 - 16, 12, Math.round(32 * f), 2, 'y');
   }
   if (trailing(0) && Math.floor(st.t * 3) % 2 === 0) { rect(W / 2 - 22, 3, 1, 7, 'y'); rect(W / 2 - 23, 4, 3, 1, 'y'); rect(W / 2 - 24, 5, 5, 1, 'y'); } // the catch-up arrow
-  const me = st.riders[0];
+  const me = st.riders[ME];
   if (st.charging) { // the throw meter: a tap passes, holding throws further
     const c = clamp(st.holdT / tune.chargeTime, 0, 1), x0 = W / 2 - 40, y0 = FLOOR - 18;
     rect(x0 - 2, y0 - 2, 84, 9, '3'); rect(x0, y0, 80, 5, '#3b2f5c'); rect(x0, y0 + 1, Math.round(80 * c), 3, c >= 1 ? 'y' : 'o');
@@ -970,14 +939,14 @@ function drawHUD() {
   if (me.stun > 0) text('휘청!', W / 2, FLOOR - 34, 10, 'f', 'center');
   for (const m of st.msgs) text(m.s, W / 2, 46, 16, 'y', 'center');
   const T = touchMode;
-  const tips = [T ? '당신은 파수꾼! 십자키로 골대를 지켜요' : '당신은 파수꾼! 방향키로 골대를 지켜요',
-    T ? '슛이 오면 몸으로 막아요 · B: 몸 날리기' : '슛이 오면 몸으로 막아요 · X: 몸 날리기',
-    T ? '퀘이플을 잡으면 A 짧게: 추격꾼에게 패스' : '퀘이플을 잡으면 Z 짧게: 추격꾼에게 패스',
-    T ? 'A 길게 눌렀다 떼면 멀리 던지기' : 'Z 길게 눌렀다 떼면 멀리 던지기'];
-    if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut === 0 && st.t > 12)) {
+  const tips = [T ? '당신은 수색꾼! 십자키로 날아 보세요' : '당신은 수색꾼! 방향키로 날아 보세요',
+    '골든 스니치를 기다려요 · 블러저를 피해요',
+    T ? '스니치를 쫓아요! 가까우면 A·B로 돌진' : '스니치를 쫓아요! 가까우면 Z·X로 돌진',
+    '먼저 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!'];
+    if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut <= 1 && st.t > tune.glimmerAt + 2)) {
     rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text(tips[st.tut], W / 2, 21.5, 8, 0, 'center');
   }
-  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('수색꾼이 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
+  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('먼저 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
 }
 const TEAMS_SHORT = ['그리핀도르', '슬리데린'];
 function panel(x, y, w, h) { rect(x, y, w, h, '3'); rect(x + 1, y + 1, w - 2, h - 2, '0'); rect(x + 2, y + 2, w - 4, h - 4, '3'); rect(x + 3, y + 3, w - 6, h - 6, '#2a2045'); }
@@ -997,8 +966,67 @@ function drawTitle() {
   if (Math.floor(tNow * 2) % 2 === 0) text(touchMode ? '화면이나 START를 눌러 시작' : 'Enter를 눌러 시작', W / 2, 148, 10, 'w', 'center');
 }
 
+// ---- The console: boot screen and game list ------------------------------------------------------
+// Each game is an entry here; for now 퀴디치 is the only one, and its scenes are title/play/results.
+// A new game adds an entry with ready: true and the scene it starts on.
+const GAMES = [
+  { id: 'quidditch', name: '퀴디치', note: '수색꾼이 되어 골든 스니치를 잡아요', ready: true, start: 'title', icon: 'glimmerA' },
+  { id: 'next1', name: '준비 중', note: '새 게임이 들어올 자리예요', ready: false },
+  { id: 'next2', name: '준비 중', note: '새 게임이 들어올 자리예요', ready: false },
+  { id: 'next3', name: '준비 중', note: '새 게임이 들어올 자리예요', ready: false },
+];
+let menuSel = 0, menuPad = 0, bootT = 0, menuMsg = 0;
+function navUp() { const e = padDir.y < 0 && menuPad >= 0; return pressed('ArrowUp') || pressed('KeyW') || e; }
+function navDown() { const e = padDir.y > 0 && menuPad <= 0; return pressed('ArrowDown') || pressed('KeyS') || e; }
+function drawCart(x, y, game, on) { // a little cartridge for each game
+  rect(x, y, 22, 18, on ? '3' : '#4a3f6a'); rect(x + 1, y + 1, 20, 16, on ? '#c9c7c0' : '#6d6488');
+  rect(x + 3, y + 3, 16, 9, game.ready ? '#8cc8f2' : '#3b2f5c'); rect(x + 4, y + 14, 14, 2, on ? '#9f9d96' : '#4a3f6a');
+  if (game.icon) drawSpr(game.icon, x + 11, y + 7);
+  else { rect(x + 9, y + 5, 4, 1, 'g'); rect(x + 12, y + 6, 1, 2, 'g'); rect(x + 10, y + 8, 2, 1, 'g'); rect(x + 10, y + 10, 2, 1, 'g'); } // a drawn question mark
+}
 // ---- Scenes ------------------------------------------------------------------------------------
 const scenes = {
+  boot: { // the console wakes: the name drops in, two notes, then the game list
+    update(dt) {
+      bootT += dt;
+      if (bootT >= 1.25 && bootT - dt < 1.25) { tone(1046, 0.08, 'square', 0.18); tone(2093, 0.5, 'square', 0.16, 0.09); }
+      if (bootT > 2.2 || (bootT > 0.3 && (startHit() || aHit() || bHit()))) { scene = 'menu'; menuPad = 0; }
+    },
+    draw() {
+      clear('#fff4dc');
+      const y = Math.min(70, -20 + bootT / 1.2 * 90);
+      text('POCKET', W / 2, y, 24, '#263080', 'center', -1);
+      if (bootT > 1.25) text('퀴디치 포켓', W / 2, y + 22, 9, '#3b6a8a', 'center', -1);
+    },
+  },
+  menu: {
+    update(dt) {
+      menuMsg = Math.max(0, menuMsg - dt);
+      if (navUp()) { menuSel = (menuSel + GAMES.length - 1) % GAMES.length; tone(880, 0.04, 'square', 0.12); }
+      if (navDown()) { menuSel = (menuSel + 1) % GAMES.length; tone(880, 0.04, 'square', 0.12); }
+      menuPad = padDir.y;
+      if (startHit() || aHit()) {
+        const g = GAMES[menuSel];
+        if (g.ready) { tone(1319, 0.08, 'square', 0.16); reset(); scene = g.start; }
+        else { menuMsg = 1.4; tone(220, 0.1, 'square', 0.14); }
+      }
+    },
+    draw() {
+      clear('#2a2045');
+      for (let y = 0; y < H; y += 4) rect(0, y, W, 1, '#30264f');
+      rect(0, 0, W, 18, '3'); text('게임 선택', W / 2, 9, 10, 'y', 'center', -1);
+      GAMES.forEach((g, i) => {
+        const y = 24 + i * 25, on = i === menuSel;
+        if (on) { rect(8, y - 2, W - 16, 24, '#fff4dc'); rect(9, y - 1, W - 18, 22, '#3b6a8a'); }
+        drawCart(16, y + 1, g, on);
+        text(g.name, 46, y + 10, 10, g.ready ? (on ? 'w' : 0) : 'g', 'left', -1);
+        if (on) { const bob = Math.floor(clock.now() * 4) % 2; rect(W - 22 + bob, y + 6, 2, 8, 'y'); rect(W - 20 + bob, y + 7, 2, 6, 'y'); rect(W - 18 + bob, y + 8, 2, 4, 'y'); rect(W - 16 + bob, y + 9, 2, 2, 'y'); }
+      });
+      rect(0, H - 26, W, 26, '3');
+      text(menuMsg > 0 ? '아직 준비 중인 게임이에요' : GAMES[menuSel].note, W / 2, H - 18, 8, menuMsg > 0 ? 'f' : 0, 'center', -1);
+      text(touchMode ? '십자키로 고르고 A나 START' : '위·아래로 고르고 Enter나 Z', W / 2, H - 7, 7, 'g', 'center', -1);
+    },
+  },
   figures: {
     update(dt) { state.t += dt; },
     draw() {
@@ -1014,7 +1042,7 @@ const scenes = {
     },
   },
   title: {
-    update() { if (startHit() || aHit()) { reset(); scene = 'play'; } },
+    update() { if (startHit() || aHit()) { reset(); scene = 'play'; } else if (bHit()) scene = 'menu'; },
     draw() { drawTitle(); },
   },
   play: {
@@ -1038,6 +1066,7 @@ const scenes = {
       for (const e of [...RD(), state.ball, ...state.rumblers, state.glimmer]) { e.px = e.x; e.py = e.y; }
       state.camPX = state.camX;
       if (state.resultsT > 0.8 && (startHit() || aHit())) { reset(); scene = 'play'; }
+      else if (state.resultsT > 0.8 && bHit()) scene = 'menu';
     },
     draw() {
       drawPlay(1);
@@ -1047,9 +1076,9 @@ const scenes = {
       text(st.gained.replace(/^\S+\s/, ''), W / 2, 60, 9, 0, 'center', -1);
       drawSpr('hawk', W / 2 - 50, 80); drawSpr('crow', W / 2 + 50, 80, true);
       digits(st.score[0], W / 2 - 8, 74, 'y', 3, 'right'); digits(st.score[1], W / 2 + 8, 74, '#9fe0b0', 3, 'left'); rect(W / 2 - 1, 78, 2, 2, '0'); rect(W / 2 - 1, 84, 2, 2, '0');
-      text(`선방 ${st.stats.saves} · 실점 ${st.stats.conceded}`, W / 2, 101, 8, 0, 'center', -1);
-      text(`패스 ${st.stats.passes} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
-      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? '눌러서 다시 하기' : 'Enter를 눌러 다시 하기', W / 2, 130, 10, 'w', 'center');
+      text(`그리핀도르 골 ${st.stats.goals} · 슬리데린 골 ${st.stats.conceded}`, W / 2, 101, 8, 0, 'center', -1);
+      text(`돌진 ${st.stats.dashes} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
+      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? 'A: 다시 하기 · B: 게임 목록' : 'Enter: 다시 하기 · X: 게임 목록', W / 2, 130, 9, 'w', 'center');
     },
   },
 };
@@ -1070,7 +1099,7 @@ function tick() {
 function drawFrame() {
   hudClear(); shakeX = 0;
   scenes[scene].draw();
-  const mb = document.getElementById('hMute'); if (mb) mb.textContent = muted ? '소리 켜기' : '소리 끄기';
+  
 }
 function frame() { tick(); requestAnimationFrame(frame); }
 // A headless browser on a time budget runs timers but almost no animation frames: a timer
@@ -1091,7 +1120,7 @@ window.game = {
 };
 
 reset();
-scene = params.get('scene') || 'title';
+scene = params.get('scene') || 'boot';
 last = clock.now();
 if (params.get('manual') === '1') drawFrame();
 else { requestAnimationFrame(frame); setInterval(timer, 50); }

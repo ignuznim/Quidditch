@@ -10,7 +10,7 @@ window.CONFIG = {
 
   // ---- The match ----
   matchTime: { value: 180, min: 30, max: 300, step: 5 },     // s on the clock
-  glimmerAt: { value: 60, min: 5, max: 120, step: 5 },       // s, the golden glimmer appears
+  glimmerAt: { value: 20, min: 5, max: 120, step: 5 },       // s, the golden glimmer appears
   goalPoints: { value: 10, min: 1, max: 50, step: 1 },
   glimmerPoints: { value: 150, min: 10, max: 300, step: 5 },
   laxUntil: { value: 30, min: 0, max: 120, step: 5 },        // s, rivals play loose until here
@@ -87,7 +87,7 @@ window.CONFIG = {
   glimmerDart: { value: 1.9, min: 1, max: 3, step: 0.05 },      // x speed in a dart
   glimmerTurnEvery: { value: 1.1, min: 0.2, max: 4, step: 0.1 }, // s between heading changes
   glimmerFlee: { value: 22, min: 0, max: 60, step: 1 },          // px, it darts from a flyer this close
-  snitchHide: { value: 10, min: 0, max: 60, step: 1 },          // s after it appears that the seekers only search: no chase, no catch
+  snitchHide: { value: 6, min: 0, max: 60, step: 1 },           // s after it appears before the rival seeker chases it (your head start)
   glimmerCatch: { value: 7, min: 2, max: 16, step: 1 },          // px
 
   // ---- Screen ----
