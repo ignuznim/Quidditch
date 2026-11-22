@@ -11,16 +11,16 @@
 #   placeholder: true         # until it is replaced; leave the line out otherwise
 - path: assets/icon-180.png
   origin: code
-  tool: "a canvas script run in a headless browser, drawn on a 64-pixel grid"
+  tool: "a canvas script run in a headless browser: the name icon (option 1), scaled from 512 px"
   date: 2026-11-22
   ships: true
 - path: assets/icon-192.png
   origin: code
-  tool: "a canvas script run in a headless browser, drawn on a 64-pixel grid"
+  tool: "a canvas script run in a headless browser: the name icon (option 1), scaled from 512 px"
   date: 2026-11-22
   ships: true
 - path: assets/icon-512.png
   origin: code
-  tool: "a canvas script run in a headless browser, drawn on a 64-pixel grid"
+  tool: "a canvas script run in a headless browser: the name icon (option 1), scaled from 512 px"
   date: 2026-11-22
   ships: true
