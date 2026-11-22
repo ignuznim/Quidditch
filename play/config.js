@@ -60,10 +60,10 @@ window.CONFIG = {
   aiShootRange: { value: 85, min: 20, max: 160, step: 5 },     // px from the hoops
   aiAimError: { value: 9, min: 0, max: 30, step: 1 },          // px of scatter
   mateAimError: { value: 14, min: 0, max: 40, step: 1 },       // px of scatter on your teammate's shots
-  seekerLag: { value: 0.45, min: 0.05, max: 2, step: 0.05 },   // s a rival's glimmer chase looks late
+  seekerLag: { value: 0.35, min: 0.05, max: 2, step: 0.05 },   // s a rival's glimmer chase looks late
   seekerBoost: { value: 1.15, min: 1, max: 1.6, step: 0.05 },  // x speed for both seekers (they fly light)
   mateSeekerSpeed: { value: 0.82, min: 0.3, max: 1.5, step: 0.02 }, // x your seeker's speed chasing the snitch
-  rivalSeekerSpeed: { value: 0.82, min: 0.3, max: 1.5, step: 0.05 }, // x flySpeed chasing the glimmer
+  rivalSeekerSpeed: { value: 1.0, min: 0.3, max: 1.5, step: 0.05 }, // x flySpeed chasing the glimmer
 
   // ---- Beaters ----
   batReach: { value: 11, min: 4, max: 24, step: 1 },          // px, a beater swings at a bludger this close
@@ -83,11 +83,24 @@ window.CONFIG = {
   stunTime: { value: 1.0, min: 0.2, max: 3, step: 0.1 },        // s a hit rider wobbles
 
   // ---- The glimmer (골든 스니치) ----
-  glimmerSpeed: { value: 82, min: 20, max: 200, step: 2 },      // px/s
+  glimmerSpeed: { value: 88, min: 20, max: 200, step: 2 },      // px/s
   glimmerDart: { value: 1.9, min: 1, max: 3, step: 0.05 },      // x speed in a dart
   glimmerTurnEvery: { value: 1.1, min: 0.2, max: 4, step: 0.1 }, // s between heading changes
   glimmerFlee: { value: 22, min: 0, max: 60, step: 1 },          // px, it darts from a flyer this close
-  snitchHide: { value: 6, min: 0, max: 60, step: 1 },           // s after it appears before the rival seeker chases it (your head start)
+  snitchHide: { value: 0, min: 0, max: 60, step: 1 },           // s after it appears before the rival seeker chases it (0: no head start)
+  snitchSight: { value: 34, min: 10, max: 120, step: 1 },       // px: closer than this you can see the snitch
+  glintEvery: { value: 2.6, min: 0.5, max: 8, step: 0.1 },      // s between glints (it shows where it is, briefly)
+  glintTime: { value: 0.45, min: 0.1, max: 2, step: 0.05 },     // s a glint lasts
+  reachRange: { value: 14, min: 4, max: 30, step: 1 },          // px: your reach must end this close to catch it
+  reachTime: { value: 0.8, min: 0.3, max: 2, step: 0.05 },      // s for the reach meter to fill
+  reachFrom: { value: 0.62, min: 0.1, max: 0.95, step: 0.01 },  // the gold window opens (fraction of the meter)
+  reachTo: { value: 0.82, min: 0.2, max: 1, step: 0.01 },       // ...and closes
+  missPause: { value: 1.0, min: 0, max: 3, step: 0.1 },         // s before you can reach again after a miss
+  rivalReach: { value: 13, min: 4, max: 30, step: 1 },          // px: the rival seeker's reach
+  rivalCatchRate: { value: 1.6, min: 0.1, max: 5, step: 0.1 },  // per second: the rival's hand closing while the snitch is in its reach
+  clashRange: { value: 9, min: 3, max: 20, step: 1 },           // px: seekers this close shoulder each other
+  clashForce: { value: 90, min: 0, max: 300, step: 5 },         // px/s each is pushed apart
+  clashStun: { value: 0.6, min: 0, max: 2, step: 0.05 },        // s a seeker wobbles when hit by one mid-dash
   glimmerCatch: { value: 7, min: 2, max: 16, step: 1 },          // px
 
   // ---- Screen ----

@@ -7,3 +7,4 @@ iteration 6	아이폰 전체 화면 웹앱(노치·홈 바 피함, 세로 고정
 iteration 7	사진에서 잰 위치대로 게임기 틀 전면 수정: 버튼 홈·음영, 십자키 홈과 화살표·미끄럼 방지 홈, A·B 기울어진 홈, SELECT·START 홈, 스피커 구멍 방향과 색, 화면 테두리 문구 위치	errors: none	evidence/iteration-7-shell.png evidence/iteration-7-iphone-menu.png evidence/iteration-7-play.png
 iteration 8	실제 기기의 일반 문구(DOT MATRIX WITH STEREO SOUND, BATTERY, PHONES), 버튼과 홈 사이 간격을 모두 같게, 아이콘 후보 3종	errors: none	evidence/iteration-8-shell.png evidence/iteration-8-play.png evidence/icons/icon-options.png
 iteration 9	아이콘을 1번(이름 글자)으로	errors: none	assets/icon-512.png
+iteration 10	어렵게: 스니치는 가까이서만 보이고 반짝임으로 위치 표시, 손 뻗기 타이밍으로 잡기(실패하면 달아남), 상대 수색꾼 동시 출발·몸싸움·밀쳐내기, 상대 손 뻗는 거리 13	errors: none (manifest는 file://에서만 막힘)	evidence/iteration-10-play.png evidence/iteration-10-reach.png

@@ -135,8 +135,8 @@ const W = 208, H = 160;         // the pixel screen: a close view, so riders rea
 const PIXEL = true;             // crisp scale, no smoothing
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif';
 const TITLE = '퀴디치 포켓';
-const CONTROLS = ['당신은 그리핀도르 수색꾼!', '방향키: 날기 · Z/X: 돌진', '골든 스니치를 먼저 잡으면 +150', 'Enter: 일시정지 · M: 소리'];
-const TOUCH_CONTROLS = ['당신은 그리핀도르 수색꾼!', '십자키: 날기 · A/B: 돌진', '골든 스니치를 먼저 잡으면 +150', 'START: 일시정지 · SELECT: 소리'];
+const CONTROLS = ['당신은 그리핀도르 수색꾼!', '방향키: 날기 · X: 돌진(밀쳐내기)', 'Z: 손 뻗기, 노란 칸에서 떼면 잡기', 'Enter: 일시정지 · M: 소리'];
+const TOUCH_CONTROLS = ['당신은 그리핀도르 수색꾼!', '십자키: 날기 · B: 돌진(밀쳐내기)', 'A: 손 뻗기, 노란 칸에서 떼면 잡기', 'START: 일시정지 · SELECT: 소리'];
 const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
 const CHEAP = params.get('render') === 'cheap';
 let seed;
@@ -212,7 +212,7 @@ function fit() {
   // the game screen inside the glass, as large as the glass is wide
   const k0 = lcdW / W;
   let s = k0 * dpr >= 3 ? k0 : Math.max(1, Math.floor(k0 * dpr)) / dpr;
-  if (s < k0 * 0.8) s = k0;
+  if (s < k0 * 0.8 || k0 * dpr < 2) s = k0; // a low-density screen: fill the glass rather than shrink to whole pixels
   const cw = Math.round(W * s), ch = Math.round(H * s);
   place(screenEl, (lcdW - cw) / 2, (lcdH - ch) / 2, cw, ch);
   canvas.width = W; canvas.height = H;
@@ -467,9 +467,9 @@ function reset() {
     ],
     glimmer: { active: false, x: mid, y: MID - 30, px: mid, py: MID - 30, vx: 0, vy: 0, wx: 1, wy: 0, turnT: 0, dartT: 0 },
     camX: 0, camPX: 0, shake: 0,
-    charging: false, holdT: 0, actPrev: false, buffer: 0,
+    charging: false, holdT: 0, actPrev: false, buffer: 0, reaching: false, reachT: 0, reachCd: 0, clashCd: 0,
     msgs: [], lantern: { '1': 0, '-1': 0 }, cheer: 0, tut: 0, tutMoved: 0, glimmerNote: 0, resultsT: 0,
-    stats: { dashes: 0, conceded: 0, hits: 0, goals: 0 },
+    stats: { dashes: 0, conceded: 0, hits: 0, goals: 0, misses: 0 },
   };
   state.camX = state.camPX = clamp(R[ME].x - W / 2 + 40, 0, fw - W);
 }
@@ -694,7 +694,7 @@ function updateRumblers(dt) {
       events.push({ type: 'hit', rider: r.id, t: state.t });
       if (nearCam(r.x)) { SFX.thud(); state.shake = Math.max(state.shake, 0.15); }
       if (b.holder === r.id) { release(r); b.mode = 'free'; b.vx = (rng() - 0.5) * 60; b.vy = -40 - rng() * 20; if (nearCam(r.x)) msg(r.team === 1 ? '슬리데린이 퀘이플을 놓쳤다!' : '퀘이플을 놓쳤다!', 1.2); }
-      if (r.id === ME) { msg('블러저에 맞았다!', 1.2); state.charging = false; }
+      if (r.id === ME) { msg('블러저에 맞았다!', 1.2); state.charging = false; state.reaching = false; }
       rb.vx = -rb.vx * 0.6; rb.vy = -50; rb.rest = tune.rumblerRest; rb.target = -1; rb.batT = 0; rb.batTeam = -1;
       break;
     }
@@ -708,8 +708,8 @@ function updateGlimmer(dt) {
     if (state.t >= tune.glimmerAt) {
       let gx = 0, best = -1; // appear where no seeker is close
       for (let k = 0; k < 8; k++) { const x = 20 + rng() * (tune.fieldWidth - 40), d = Math.min(...seekers.map(r => Math.abs(r.x - x))); if (d > best) { best = d; gx = x; } }
-      g.active = true; g.x = gx; g.y = TOP + 14; g.px = g.x; g.py = g.y; g.turnT = 0;
-      state.glimmerNote = 3.5; SFX.bell(); msg('골든 스니치 등장!', 2); if (state.tut < 2) state.tut = 2; events.push({ type: 'glimmer', t: state.t });
+      g.active = true; g.x = gx; g.y = TOP + 14; g.px = g.x; g.py = g.y; g.turnT = 0; g.glintT = 0; g.glint = 0; g.gx = gx; g.gy = g.y;
+      state.glimmerNote = 3.5; SFX.bell(); msg('골든 스니치 등장! 반짝임을 찾아요', 2); events.push({ type: 'glimmer', t: state.t });
     }
     return;
   }
@@ -719,9 +719,13 @@ function updateGlimmer(dt) {
     if (g.y < TOP + 12) g.wy = Math.abs(g.wy); if (g.y > FLOOR - 16) g.wy = -Math.abs(g.wy);
     g.turnT = tune.glimmerTurnEvery * (0.5 + rng());
   }
+  // a glint every few seconds shows where it is; up close you see it anyway
+  g.glintT -= dt; g.glint = Math.max(0, g.glint - dt);
+  if (g.glintT <= 0) { g.glint = tune.glintTime; g.glintT = tune.glintEvery * (0.7 + rng() * 0.6); g.gx = g.x; g.gy = g.y; if (nearCam(g.x)) tone(2637, 0.05, 'triangle', 0.08); }
   for (const r of seekers) {
     const d = dist(r, g);
-    if (d < tune.glimmerCatch && r.stun <= 0 && (r.id === ME || state.t >= tune.glimmerAt + tune.snitchHide)) { catchGlimmer(r); return; }
+    // the rival's hand closes on it now and then while it is in reach; yours needs the timed reach (A)
+    if (r.id !== ME && d < tune.rivalReach && r.stun <= 0 && rng() < tune.rivalCatchRate * dt) { catchGlimmer(r); return; }
     if (d < tune.glimmerFlee && g.dartT <= 0) {
       const ax = g.x - r.x, ay = g.y - r.y, l = Math.hypot(ax, ay) || 1, s = rng() < 0.5 ? -1 : 1;
       g.wx = ax / l + (-ay / l) * s * 0.8; g.wy = ay / l + (ax / l) * s * 0.8;
@@ -810,7 +814,10 @@ function aiSeeker(r, dt) {
     const a = state.t * 0.6 + r.team * Math.PI;
     const inp = steerInput(r, tune.fieldWidth / 2 + Math.cos(a) * 70, TOP + 18 + Math.sin(a) * 8); fly(r, inp.ix, inp.iy, dt, m * 0.7); return;
   }
-  r.aiT -= dt; if (r.aiT <= 0) { r.sx = g.x; r.sy = g.y; r.aiT = tune.seekerLag; } // a late look: darts shake it off
+  // the rival sees what you see: the last glint, or the snitch itself once close
+  r.aiT -= dt;
+  if (r.aiT <= 0 && (g.glint > 0 || dist(r, g) < tune.snitchSight)) { r.sx = g.x; r.sy = g.y; r.aiT = tune.seekerLag; }
+  if (r.dashCd <= 0 && dist(r, g) < 26 && rng() < 0.05) startDash(r, g.x - r.x, g.y - r.y);
   const inp = steerInput(r, r.sx, r.sy); fly(r, inp.ix, inp.iy, dt, m * (r.team === 1 ? tune.rivalSeekerSpeed : tune.mateSeekerSpeed));
 }
 function aiKeeper(r, dt) { // the rival keeper: track the quaffle across the hoops, throw it out
@@ -840,9 +847,41 @@ function readInput() {
   ix = clamp(ix + padDir.x, -1, 1); iy = clamp(iy + padDir.y, -1, 1);
   return { ix, iy, a: aDown(), aHit: aHit(), bHit: bHit() };
 }
-function playerAct(me, inp, dt) { // A or B: a burst of speed, the way a seeker closes the last metres
-  const pressedNow = inp.a && !state.actPrev; state.actPrev = inp.a;
-  if ((pressedNow || inp.bHit) && startDash(me, inp.ix, inp.iy)) { state.stats.dashes++; if (state.tut === 2) state.tut = 3; }
+/** B: a burst of speed. A: hold to reach for the snitch, let go in the gold window to close your hand. */
+function playerAct(me, inp, dt) {
+  const g = state.glimmer, pressedNow = inp.a && !state.actPrev, releasedNow = !inp.a && state.actPrev;
+  state.actPrev = inp.a; state.reachCd = Math.max(0, state.reachCd - dt);
+  if (inp.bHit && startDash(me, inp.ix, inp.iy)) { state.stats.dashes++; if (state.tut === 3) state.tut = 4; }
+  if (pressedNow && state.reachCd <= 0 && me.stun <= 0) { state.reaching = true; state.reachT = 0; if (state.tut === 2) state.tut = 3; }
+  if (state.reaching) {
+    state.reachT += dt / tune.reachTime;
+    const c = state.reachT, inWin = c >= tune.reachFrom && c <= tune.reachTo;
+    if (releasedNow || c > 1 || me.stun > 0) {
+      state.reaching = false;
+      const inReach = g.active && dist(me, g) < tune.reachRange;
+      if (releasedNow && inWin && inReach) { catchGlimmer(me); return; }
+      // a miss: the snitch bolts and your hand needs a moment
+      state.reachCd = tune.missPause; SFX.miss();
+      msg(!g.active ? '아직 스니치가 없어요' : !inReach ? '너무 멀어요!' : '놓쳤다!', 0.9);
+      if (g.active && dist(me, g) < tune.reachRange * 2) {
+        const ax = g.x - me.x, ay = g.y - me.y, l = Math.hypot(ax, ay) || 1;
+        g.wx = ax / l; g.wy = ay / l * 0.6; g.dartT = 0.7; g.turnT = 1;
+      }
+      state.stats.misses++;
+    }
+  }
+}
+/** Seekers shoulder each other: both bounce apart, and one mid-dash knocks the other off line. */
+function seekerClash() {
+  const R = RD(), me = R[ME], o = R.find(r => r.role === 'seeker' && r.team !== me.team);
+  const d = dist(me, o);
+  if (d > tune.clashRange || d === 0 || state.clashCd > 0) return;
+  const nx = (me.x - o.x) / d, ny = (me.y - o.y) / d, f = tune.clashForce;
+  me.vx += nx * f; me.vy += ny * f; o.vx -= nx * f; o.vy -= ny * f;
+  if (me.dashT > 0 && o.dashT <= 0) { o.stun = Math.max(o.stun, tune.clashStun); msg('밀쳐냈다!', 0.8); }
+  else if (o.dashT > 0 && me.dashT <= 0) { me.stun = Math.max(me.stun, tune.clashStun); state.reaching = false; msg('밀려났다!', 0.8); }
+  state.clashCd = 0.35; if (nearCam(me.x)) { SFX.thud(); state.shake = Math.max(state.shake, 0.12); }
+  events.push({ type: 'clash', t: state.t });
 }
 
 // ---- The step --------------------------------------------------------------------------------
@@ -854,6 +893,8 @@ function updateMatch(dt) {
   const inp = readInput();
   fly(me, inp.ix, inp.iy, dt, speedMult(me));
   playerAct(me, inp, dt);
+  if (state.over) return;
+  state.clashCd = Math.max(0, state.clashCd - dt); seekerClash();
   for (const r of R) {
     if (r === me) continue;
     if (r.role === 'keeper') aiKeeper(r, dt);
@@ -865,7 +906,7 @@ function updateMatch(dt) {
   updateRumblers(dt);
   if (!state.over) updateGlimmer(dt);
   if (state.tut === 0 && (inp.ix || inp.iy)) { state.tutMoved += dt; if (state.tutMoved > 0.8) state.tut = 1; }
-  if (state.tut === 3) { state.tutMoved += dt; if (state.tutMoved > 6) state.tut = 4; }
+  if (state.tut === 1 && state.glimmer.active && dist(me, state.glimmer) < tune.snitchSight) state.tut = 2; // you have found it: now reach
   // camera: you, a little ahead, leaning toward the snitch once it is out
   const g = state.glimmer, focus = me.x + me.face * 18 + (g.active ? clamp(g.x - me.x, -80, 80) * 0.35 : 0);
   const want = clamp(focus - W / 2, 0, tune.fieldWidth - W);
@@ -979,9 +1020,17 @@ function drawPlay(a) {
   const bp = ip(b, a);
   drawSpr('volla', bp.x - cx, bp.y);
   for (const rb of state.rumblers) if (rb.active) { const p = ip(rb, a); drawSpr('rumbler', p.x - cx, p.y, Math.floor(tNow * 8) % 2 === 0); }
-  if (g.active) { const p = ip(g, a); drawSpr(Math.floor(tNow * 16) % 2 ? 'glimmerA' : 'glimmerB', p.x - cx, p.y); }
+  const me0 = R[ME], seen = g.active && (dist(me0, g) < tune.snitchSight || g.glint > 0);
+  if (g.active && seen) { const p = ip(g, a); drawSpr(Math.floor(tNow * 16) % 2 ? 'glimmerA' : 'glimmerB', p.x - cx, p.y); }
+  if (g.active && g.glint > 0) { // the glint: a star of light
+    const k = g.glint / tune.glintTime, r0 = Math.round(3 + (1 - k) * 6), x0 = Math.round(g.gx - cx), y0 = Math.round(g.gy);
+    rect(x0 - r0, y0, r0 * 2 + 1, 1, 'w'); rect(x0, y0 - r0, 1, r0 * 2 + 1, 'w'); rect(x0 - 1, y0 - 1, 3, 3, 'y');
+  }
+  if (state.reaching) { // your reaching hand
+    const mp = ip(me0, a); rect(mp.x - cx + me0.face * 8, mp.y - 1, 3, 3, 's'); rect(mp.x - cx + me0.face * 6, mp.y, 2, 1, 's');
+  }
   pointer(bp.x - cx, bp.y, 'r');
-  if (g.active) pointer(g.x - cx, g.y, 'y');
+  if (g.active && g.glint > 0) pointer(g.gx - cx, g.gy, 'y');
   drawHUD();
 }
 function pointer(sx, sy, c) { // an arrow at the edge toward the ball or the glimmer
@@ -1002,6 +1051,14 @@ function drawHUD() {
   }
   if (trailing(0) && Math.floor(st.t * 3) % 2 === 0) { rect(W / 2 - 22, 3, 1, 7, 'y'); rect(W / 2 - 23, 4, 3, 1, 'y'); rect(W / 2 - 24, 5, 5, 1, 'y'); } // the catch-up arrow
   const me = st.riders[ME];
+  if (st.reaching) { // the reach meter: let go in the gold window
+    const c = clamp(st.reachT, 0, 1), x0 = W / 2 - 40, y0 = FLOOR - 18;
+    rect(x0 - 2, y0 - 2, 84, 9, '3'); rect(x0, y0, 80, 5, '#3b2f5c');
+    rect(x0 + Math.round(80 * tune.reachFrom), y0, Math.round(80 * (tune.reachTo - tune.reachFrom)), 5, 'y');
+    const inWin = c >= tune.reachFrom && c <= tune.reachTo;
+    rect(x0, y0 + 1, Math.round(80 * c), 3, inWin ? 'w' : 'o');
+    text(inWin ? '지금 떼요!' : '손 뻗는 중…', W / 2, y0 - 9, 9, inWin ? 'y' : 0, 'center');
+  } else if (st.reachCd > 0) text('손이 아직…', W / 2, FLOOR - 22, 8, 'g', 'center');
   if (st.charging) { // the throw meter: a tap passes, holding throws further
     const c = clamp(st.holdT / tune.chargeTime, 0, 1), x0 = W / 2 - 40, y0 = FLOOR - 18;
     rect(x0 - 2, y0 - 2, 84, 9, '3'); rect(x0, y0, 80, 5, '#3b2f5c'); rect(x0, y0 + 1, Math.round(80 * c), 3, c >= 1 ? 'y' : 'o');
@@ -1011,10 +1068,10 @@ function drawHUD() {
   for (const m of st.msgs) text(m.s, W / 2, 46, 16, 'y', 'center');
   const T = touchMode;
   const tips = [T ? '당신은 수색꾼! 십자키로 날아 보세요' : '당신은 수색꾼! 방향키로 날아 보세요',
-    '골든 스니치를 기다려요 · 블러저를 피해요',
-    T ? '스니치를 쫓아요! 가까우면 A·B로 돌진' : '스니치를 쫓아요! 가까우면 Z·X로 돌진',
-    '먼저 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!'];
-    if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut <= 1 && st.t > tune.glimmerAt + 2)) {
+    '반짝이는 빛을 찾아요: 스니치는 가까이 가야 보여요',
+    T ? '가까이서 A를 누르고 노란 칸에서 떼면 잡아요' : '가까이서 Z를 누르고 노란 칸에서 떼면 잡아요',
+    T ? 'B: 돌진 · 상대 수색꾼을 밀쳐낼 수 있어요' : 'X: 돌진 · 상대 수색꾼을 밀쳐낼 수 있어요'];
+    if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 ) {
     rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text(tips[st.tut], W / 2, 21.5, 8, 0, 'center');
   }
   if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('먼저 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
@@ -1041,7 +1098,7 @@ function drawTitle() {
 // Each game is an entry here; for now 퀴디치 is the only one, and its scenes are title/play/results.
 // A new game adds an entry with ready: true and the scene it starts on.
 const GAMES = [
-  { id: 'quidditch', name: '퀴디치', note: '수색꾼이 되어 골든 스니치를 잡아요', ready: true, start: 'title', icon: 'glimmerA' },
+  { id: 'quidditch', name: '퀴디치', note: '반짝임을 찾아 골든 스니치를 잡아요', ready: true, start: 'title', icon: 'glimmerA' },
   { id: 'next1', name: '준비 중', note: '새 게임이 들어올 자리예요', ready: false },
   { id: 'next2', name: '준비 중', note: '새 게임이 들어올 자리예요', ready: false },
   { id: 'next3', name: '준비 중', note: '새 게임이 들어올 자리예요', ready: false },
@@ -1148,7 +1205,7 @@ const scenes = {
       drawSpr('hawk', W / 2 - 50, 80); drawSpr('crow', W / 2 + 50, 80, true);
       digits(st.score[0], W / 2 - 8, 74, 'y', 3, 'right'); digits(st.score[1], W / 2 + 8, 74, '#9fe0b0', 3, 'left'); rect(W / 2 - 1, 78, 2, 2, '0'); rect(W / 2 - 1, 84, 2, 2, '0');
       text(`그리핀도르 골 ${st.stats.goals} · 슬리데린 골 ${st.stats.conceded}`, W / 2, 101, 8, 0, 'center', -1);
-      text(`돌진 ${st.stats.dashes} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
+      text(`헛손질 ${st.stats.misses} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
       if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? 'A: 다시 하기 · B: 게임 목록' : 'Enter: 다시 하기 · X: 게임 목록', W / 2, 130, 9, 'w', 'center');
     },
   },
