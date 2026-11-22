@@ -20,74 +20,103 @@
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none;
     font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif; }
   body { font-variant-numeric: tabular-nums; }
-  /* The handheld: the classic grey brick, laid out from a photo of the real thing, in our own name.
-     Every size below is set from the body's width in fit(), so it keeps its proportions on any screen. */
-  #device { position: absolute; touch-action: none;
-    background: linear-gradient(175deg, #dddcd7 0%, #d0cfca 45%, #c6c5bf 100%);
-    box-shadow: inset 0 2px 0 #f1f0ec, inset -3px -4px 0 #aeada7, 0 22px 46px rgba(0,0,0,0.6); }
-  .groove { position: absolute; height: 0; border-top: 2px solid #b4b3ad; border-bottom: 1px solid #ecebe6; }
-  .groove-v { position: absolute; width: 0; border-left: 2px solid #b4b3ad; border-right: 1px solid #ecebe6; }
-  .offon { position: absolute; color: #b9b8b2; font-family: Arial, Helvetica, sans-serif; font-weight: 700; letter-spacing: 0.05em;
-    text-shadow: 0 1px 0 #efeee9, 0 -1px 0 #a9a8a2; white-space: nowrap; }
-  #bezel { position: absolute; background: #8d8f9b; box-shadow: inset 0 1px 0 #a3a5b0, inset 0 -1px 0 #777985; }
+  /* The handheld, measured off a photo of the real one (body 100 units wide, 166 tall) and drawn in our
+     own name. fit() sets every size from the body's width; the shading is light from the upper left. */
+  #device { position: absolute; touch-action: none; overflow: hidden;
+    background: linear-gradient(100deg, #dcdad6 0%, #d5d3cf 55%, #cbc9c5 100%);
+    box-shadow: inset 2px 0 0 #e9e7e3, inset -3px 0 0 #b9b7b3, inset 0 -4px 0 #b3b1ad, 0 24px 48px rgba(0,0,0,0.55); }
+  .lip { position: absolute; left: 0; right: 0; top: 0; background: linear-gradient(180deg, #e2e0dc, #d3d1cd); }
+  .lip-edge { position: absolute; left: 0; right: 0; height: 2px; background: #b6b4b0; box-shadow: 0 1px 0 #ecebe7; }
+  .lip-corner { position: absolute; top: 0; background: linear-gradient(180deg, #e6e4e0, #d6d4d0); }
+  .lip-cut { position: absolute; top: 0; width: 2px; background: #b6b4b0; box-shadow: 1px 0 0 #ecebe7; }
+  .offon { position: absolute; border-radius: 999px; border: 1.5px solid #c2c0bc; box-shadow: inset 0 1px 0 #b9b7b3, 0 1px 0 #ecebe7;
+    color: #bdbbb7; font-family: Arial, Helvetica, sans-serif; font-weight: 700; letter-spacing: 0.04em;
+    display: flex; align-items: center; justify-content: center; text-shadow: 0 1px 0 #efeee9, 0 -1px 0 #a9a7a3; white-space: nowrap; }
+  #bezel { position: absolute; background: linear-gradient(170deg, #67667a 0%, #5d5c70 60%, #56556a 100%);
+    box-shadow: inset 0 1px 0 #77768a, inset 0 -1px 0 #4a495c, 0 0 0 1px #c3c1bd; }
   #bezel .stripe { position: absolute; }
-  #bezel .stripetext { position: absolute; color: #e2e1dc; font-family: Arial, Helvetica, sans-serif; font-weight: 400; letter-spacing: 0.06em;
-    background: #8d8f9b; white-space: nowrap; transform: translate(-50%, -50%); }
-  #bezel .led { position: absolute; border-radius: 50%; background: #e03535; box-shadow: 0 0 5px #ff4d4d, inset 0 -1px 0 #8a1414; }
-  #bezel .ledlabel { position: absolute; color: #e2e1dc; font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.04em; transform: translateX(-50%); white-space: nowrap; }
-  .brand { position: absolute; color: #263080; white-space: nowrap; line-height: 1; }
-  .brand .small { font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; font-weight: 900; letter-spacing: -0.01em; }
-  .brand .big { font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif; font-style: italic; font-weight: 800; letter-spacing: 0.01em; }
-  .brand sup { font-family: Arial, sans-serif; font-weight: 700; }
-  #screen { position: absolute; background: #000; box-shadow: 0 0 0 1px #5f616c; }
+  #bezel .stripetext { position: absolute; color: #f0efea; font-family: Futura, "Century Gothic", "Trebuchet MS", Arial, sans-serif;
+    font-weight: 500; letter-spacing: 0.05em; white-space: nowrap; }
+  #bezel .led { position: absolute; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ff6a6a, #d02020 60%, #7a0e0e);
+    box-shadow: 0 0 6px rgba(255,60,60,0.8), 0 0 0 1px #2c2b38; }
+  #bezel .ledlabel { position: absolute; color: #f0efea; font-family: Futura, "Century Gothic", "Trebuchet MS", Arial, sans-serif; font-weight: 500;
+    letter-spacing: 0.04em; transform: translateX(-50%); white-space: nowrap; }
+  #lcd { position: absolute; background: #1b1d1b; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8), 0 0 0 1px #4a495b; overflow: hidden; }
+  #screen { position: absolute; background: #000; }
   #screen canvas { display: block; position: absolute; left: 0; top: 0; touch-action: none; }
   #game { image-rendering: pixelated; image-rendering: crisp-edges; }
   #hud { pointer-events: none; }
+  .brand { position: absolute; color: #2a3b9c; white-space: nowrap; line-height: 1; }
+  .brand .small { font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; font-weight: 900; letter-spacing: -0.01em; }
+  .brand .big { font-family: Futura, "Century Gothic", "Trebuchet MS", Arial, sans-serif; font-weight: 500; letter-spacing: 0.01em; }
   #pad { position: absolute; inset: 0; pointer-events: none; }
   #pad > .dpad, #pad > .btn, #pad > .pill { pointer-events: auto; }
-  /* the d-pad: one cross-shaped piece, so the arms never show a seam */
-  .dpad { position: absolute; filter: drop-shadow(0 3px 0 #77767a) drop-shadow(0 1px 2px rgba(0,0,0,0.4)); }
-  .dpad .cross { position: absolute; inset: 0; background: linear-gradient(160deg, #3b3c45 0%, #26272e 55%, #1b1c21 100%);
-    clip-path: polygon(33.5% 0, 66.5% 0, 66.5% 33.5%, 100% 33.5%, 100% 66.5%, 66.5% 66.5%, 66.5% 100%, 33.5% 100%, 33.5% 66.5%, 0 66.5%, 0 33.5%, 33.5% 33.5%);
-    border-radius: 4px; }
-  .dpad .dimple { position: absolute; left: 39%; top: 39%; width: 22%; height: 22%; border-radius: 50%;
-    background: radial-gradient(circle at 50% 35%, #15161a, #2c2d35 75%); }
-  .dpad .ar { position: absolute; width: 0; height: 0; border-style: solid; border-color: transparent; opacity: 0.55; }
-  .dpad.on-up .cross { background: linear-gradient(0deg, #3b3c45 30%, #17181c 100%); }
-  .dpad.on-dn .cross { background: linear-gradient(180deg, #3b3c45 30%, #17181c 100%); }
-  .dpad.on-lf .cross { background: linear-gradient(270deg, #3b3c45 30%, #17181c 100%); }
-  .dpad.on-rt .cross { background: linear-gradient(90deg, #3b3c45 30%, #17181c 100%); }
-  .btn { position: absolute; border-radius: 50%; background: radial-gradient(circle at 42% 34%, #d8478a, #b3245f 60%, #8f1a4b);
-    box-shadow: 0 3px 0 #6e1238, 0 4px 5px rgba(0,0,0,0.3); }
-  .btn.down { transform: translateY(2px); box-shadow: 0 1px 0 #6e1238; filter: brightness(0.92); }
-  .lab { position: absolute; color: #263080; font-family: Arial, Helvetica, sans-serif; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap; transform-origin: 50% 50%; }
-  .pill { position: absolute; border-radius: 999px; background: linear-gradient(180deg, #a9a8b0, #8e8d96);
-    box-shadow: inset 0 1px 0 #c2c1c8, 0 2px 0 #7b7a83; transform-origin: 50% 50%; }
-  .pill.down { filter: brightness(0.88); box-shadow: inset 0 1px 0 #c2c1c8; }
-  .slot { position: absolute; border-radius: 999px; background: linear-gradient(90deg, #a6a59f, #8f8e88); box-shadow: inset 1px 1px 2px rgba(0,0,0,0.35), 1px 1px 0 #e6e5e0; transform-origin: 50% 50%; }
-  .notch { position: absolute; border-radius: 999px; border: 2px solid #b8b7b1; box-shadow: inset 0 1px 0 #eceae5; }
+  /* recesses moulded into the body: dark at the upper left, catching light at the lower right */
+  .well { position: absolute; background: #cfcdc9;
+    box-shadow: inset 2px 2px 3px rgba(0,0,0,0.22), inset -2px -2px 2px rgba(255,255,255,0.75); transform-origin: 50% 50%; }
+  #dwell { background: #d1cfcb; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.14), inset -1px -1px 1px rgba(255,255,255,0.6); }
+  .mark { position: absolute; width: 0; height: 0; border-style: solid; border-color: transparent; }
+  /* the d-pad: one cross-shaped piece with grip ridges on each arm and a dished centre */
+  .dpad { position: absolute; filter: drop-shadow(1px 3px 0 #8e8c88) drop-shadow(0 3px 3px rgba(0,0,0,0.35)); }
+  .dpad .cross { position: absolute; inset: 0; background: linear-gradient(145deg, #3a3a40 0%, #232327 45%, #151518 100%);
+    clip-path: polygon(33% 0, 67% 0, 67% 33%, 100% 33%, 100% 67%, 67% 67%, 67% 100%, 33% 100%, 33% 67%, 0 67%, 0 33%, 33% 33%); }
+  .dpad .ridge { position: absolute; opacity: 0.9; }
+  .dpad .ridge.v { background: repeating-linear-gradient(180deg, rgba(255,255,255,0.10) 0 1px, rgba(0,0,0,0.35) 1px 2px, transparent 2px 4px); }
+  .dpad .ridge.h { background: repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 1px, rgba(0,0,0,0.35) 1px 2px, transparent 2px 4px); }
+  .dpad .dimple { position: absolute; border-radius: 50%; background: radial-gradient(circle at 58% 62%, #3a3a41, #18181b 70%);
+    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05); }
+  .dpad.on-up .cross { background: linear-gradient(0deg, #3a3a40 35%, #121215 100%); }
+  .dpad.on-dn .cross { background: linear-gradient(180deg, #3a3a40 35%, #121215 100%); }
+  .dpad.on-lf .cross { background: linear-gradient(270deg, #3a3a40 35%, #121215 100%); }
+  .dpad.on-rt .cross { background: linear-gradient(90deg, #3a3a40 35%, #121215 100%); }
+  /* A and B: domed, plum-magenta */
+  .btn { position: absolute; border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #b4568f 0%, #93306f 38%, #7d2460 70%, #66194d 100%);
+    box-shadow: 1px 4px 0 #4d1239, 1px 5px 4px rgba(0,0,0,0.3), inset 0 -2px 3px rgba(0,0,0,0.25); }
+  .btn::after { content: ''; position: absolute; left: 22%; top: 16%; width: 34%; height: 22%; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.35), transparent 70%); }
+  .btn.down { transform: translateY(3px); box-shadow: 0 1px 0 #4d1239, inset 0 -1px 2px rgba(0,0,0,0.3); filter: brightness(0.9); }
+  .lab { position: absolute; color: #2a3b9c; font-family: Futura, "Century Gothic", "Trebuchet MS", Arial, sans-serif; font-weight: 700;
+    font-style: italic; letter-spacing: 0.08em; white-space: nowrap; transform-origin: 50% 50%; }
+  /* SELECT and START: pale lavender rubber keys sitting in their own slots */
+  .pill { position: absolute; border-radius: 999px; transform-origin: 50% 50%;
+    background: linear-gradient(180deg, #d4d2e2 0%, #b8b6c8 55%, #9e9cb0 100%);
+    box-shadow: 1px 2px 0 #7f7d90, inset 0 1px 0 rgba(255,255,255,0.7); }
+  .pill.down { filter: brightness(0.9); box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); }
+  /* the speaker: six slanted slots cut through the shell */
+  .slot { position: absolute; border-radius: 999px; transform-origin: 50% 50%;
+    background: linear-gradient(90deg, #8a8884 0%, #9d9b97 45%, #b3b1ad 100%);
+    box-shadow: inset 2px 2px 3px rgba(0,0,0,0.45), inset -1px -1px 1px rgba(255,255,255,0.35), 1px 1px 0 #eeede9; }
+  .phones { position: absolute; border-radius: 999px; border: 1.5px solid #bdbbb7; box-shadow: inset 0 1px 0 #b0aeaa, 0 1px 0 #eeede9; }
 </style>
 </head>
 <body>
 <div id="device">
-  <div class="groove" id="groove"></div><div class="groove-v" id="grooveL"></div><div class="groove-v" id="grooveR"></div>
-  <div class="offon" id="offon">&#9664;OFF&middot;ON&#9654;</div>
+  <div class="lip" id="lip"></div><div class="lip-corner" id="cornerL"></div><div class="lip-corner" id="cornerR"></div>
+  <div class="lip-cut" id="cutL"></div><div class="lip-cut" id="cutR"></div><div class="lip-edge" id="lipEdge"></div>
+  <div class="offon" id="offon">OFF&bull;ON</div>
   <div id="bezel">
-    <div class="stripe" id="s1" style="background:#8e2c5a"></div><div class="stripe" id="s2" style="background:#2b2f74"></div>
+    <div class="stripe" id="sL1" style="background:#8a2d5c"></div><div class="stripe" id="sL2" style="background:#2c3075"></div>
+    <div class="stripe" id="sR1" style="background:#8a2d5c"></div><div class="stripe" id="sR2" style="background:#2c3075"></div>
     <div class="stripetext" id="stext">PIXEL SKY WITH SQUARE SOUND</div>
     <div class="led"></div><div class="ledlabel">POWER</div>
-    <div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
+    <div id="lcd"><div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div></div>
   </div>
   <div class="brand" id="brand"><span class="small">Pixel</span> <span class="big">POCKET BOY</span></div>
   <div id="pad">
-    <div class="dpad" id="dpad"><div class="cross"></div><div class="dimple"></div>
-      <div class="ar" id="arU"></div><div class="ar" id="arD"></div><div class="ar" id="arL"></div><div class="ar" id="arR"></div></div>
+    <div class="well" id="dwell"></div>
+    <div class="mark" id="mU"></div><div class="mark" id="mD"></div><div class="mark" id="mL"></div><div class="mark" id="mR"></div>
+    <div class="dpad" id="dpad"><div class="cross"></div>
+      <div class="ridge v" id="rU"></div><div class="ridge v" id="rD"></div><div class="ridge h" id="rL"></div><div class="ridge h" id="rR"></div>
+      <div class="dimple" id="dimple"></div></div>
+    <div class="well" id="abwell"></div>
     <div class="btn" id="bB"></div><div class="btn" id="bA"></div>
     <div class="lab" id="lB">B</div><div class="lab" id="lA">A</div>
+    <div class="well" id="wSel"></div><div class="well" id="wStart"></div>
     <div class="pill" id="bMute"></div><div class="pill" id="bStart"></div>
     <div class="lab" id="lMute">SELECT</div><div class="lab" id="lStart">START</div>
     <div id="grille"></div>
-    <div class="notch" id="notchB"></div>
+    <div class="phones" id="phones"></div>
   </div>
 </div>
 <script src="config.js"></script>
@@ -142,75 +171,94 @@ const saProbe = document.createElement('div');
 saProbe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
 document.body.appendChild(saProbe);
 function safeArea() { const c = getComputedStyle(saProbe); return { t: parseFloat(c.paddingTop) || 0, b: parseFloat(c.paddingBottom) || 0 }; }
-/** Lays out the handheld from the proportions of the real one (width 90 : height 148), at any window size. */
+/** Lays out the handheld at the real one's measured positions (body 100 wide x 166 tall units). */
 function fit() {
   const iw = innerWidth, ih = innerHeight, dpr = devicePixelRatio || 1;
   // A phone held upright, or the app opened from the home screen: the body fills the whole screen,
-  // clear of the notch and the home bar. Elsewhere it keeps the real one's 90 : 148 shape.
+  // clear of the notch and the home bar. Elsewhere it keeps the real one's shape.
   const app = navigator.standalone === true || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   const full = app || (ih > iw && iw <= 700);
   const sa = full ? safeArea() : { t: 0, b: 0 };
-  const Dw = full ? iw : Math.min(iw, ih * 0.608, 560), Dh = full ? ih : Math.min(ih, Dw / 0.608);
-  const u = Dw / 100; // one per cent of the body's width
+  const Dw = full ? iw : Math.min(iw, ih / 1.66, 560), Dh = full ? ih : Math.min(ih, Dw * 1.66);
+  const u = Dw / 100;
+  const el = id => document.getElementById(id);
   place(deviceEl, (iw - Dw) / 2, (ih - Dh) / 2, Dw, Dh);
-  deviceEl.style.borderRadius = full ? `0 0 ${u * 22}px 0` : `${u * 2.5}px ${u * 2.5}px ${u * 22}px ${u * 2.5}px`;
-  document.body.style.background = full ? '#c9c8c2' : '';
-  const T = sa.t, extra = Math.max(0, Dh - sa.b - T - u * 164.5); // height the real proportions leave over
-  // the top: a groove across, two short ones down, the OFF-ON mark
-  place(document.getElementById('groove'), 0, T + u * 5.2, Dw); place(document.getElementById('grooveL'), u * 8.5, T, null, u * 5.2); place(document.getElementById('grooveR'), Dw - u * 8.5, T, null, u * 5.2);
-  const offon = document.getElementById('offon'); place(offon, u * 12, T + u * 1.2); offon.style.fontSize = u * 2.6 + 'px';
-  // the bezel, from 8.5% to 91.5% of the width, its lower-right corner swept round; a tall phone gets a bigger screen
-  const sw = u * 60 + Math.min(extra * 0.45, u * 16);
-  const bw = Math.min(sw + u * 23, u * 96), bx = (Dw - bw) / 2, by = T + u * 9.5;
-  const k0 = sw / W; // the screen: 60% of the body's width, more on a tall phone
+  deviceEl.style.borderRadius = full ? `0 0 ${u * 15}px 0` : `${u * 2.5}px ${u * 2.5}px ${u * 15}px ${u * 2.5}px`;
+  document.body.style.background = full ? '#d3d1cd' : '';
+  const T = sa.t, extra = Math.max(0, Dh - sa.b - T - u * 166); // height the real proportions leave over
+  // the top lip: raised corners either side, a groove under it, the OFF-ON mark
+  place(el('lip'), 0, 0, Dw, T + u * 8.8); place(el('lipEdge'), 0, T + u * 8.8, Dw);
+  place(el('cornerL'), 0, 0, u * 8.5, T + u * 8.8); place(el('cornerR'), Dw - u * 8.5, 0, u * 8.5, T + u * 8.8);
+  place(el('cutL'), u * 8.5, 0, null, T + u * 8.8); place(el('cutR'), Dw - u * 8.5, 0, null, T + u * 8.8);
+  const offon = el('offon'); place(offon, u * 12, T + u * 2.3, u * 19, u * 4.2); offon.style.fontSize = u * 2.4 + 'px';
+  // the bezel; on a tall phone the screen grows into the spare height
+  const grow = Math.min(extra * 0.45, u * 14);
+  const lcdW = u * 55.5 + grow, lcdH = lcdW * (51 / 55.5);
+  const bezW = Math.min(u * 84.2 + grow, u * 97), bezX = (Dw - bezW) / 2, bezY = T + u * 14;
+  const bezH = u * 7 + lcdH + u * 6.3;
+  place(bezelEl, bezX, bezY, bezW, bezH); bezelEl.style.borderRadius = `${u * 1.6}px ${u * 1.6}px ${u * 10}px ${u * 1.6}px`;
+  const lcdX = (bezW - lcdW) / 2, lcdY = u * 7;
+  const lcd = el('lcd'); place(lcd, lcdX, lcdY, lcdW, lcdH);
+  // the stripes either side of the line of text, which sits right of centre as on the real one
+  const st = el('stext'); st.style.fontSize = u * 2.15 + 'px'; st.style.left = '0px';
+  const tw = st.offsetWidth, th = st.offsetHeight, tcx = bezW * 0.573;
+  place(st, tcx - tw / 2, u * 3.85 - th / 2);
+  const sh = Math.max(1, u * 0.5);
+  place(el('sL1'), u * 2.9, u * 3.2, tcx - tw / 2 - u * 1.4 - u * 2.9, sh); place(el('sL2'), u * 2.9, u * 4.4, tcx - tw / 2 - u * 1.4 - u * 2.9, sh);
+  place(el('sR1'), tcx + tw / 2 + u * 1.4, u * 3.2, bezW - u * 3.3 - (tcx + tw / 2 + u * 1.4), sh); place(el('sR2'), tcx + tw / 2 + u * 1.4, u * 4.4, bezW - u * 3.3 - (tcx + tw / 2 + u * 1.4), sh);
+  const led = bezelEl.querySelector('.led'); place(led, (lcdX - u * 1.8) / 2, lcdY + lcdH * 0.35, u * 1.8, u * 1.8);
+  const ll = bezelEl.querySelector('.ledlabel'); place(ll, lcdX / 2, lcdY + lcdH * 0.35 + u * 4); ll.style.fontSize = u * 1.95 + 'px';
+  // the game screen inside the glass, as large as the glass is wide
+  const k0 = lcdW / W;
   let s = k0 * dpr >= 3 ? k0 : Math.max(1, Math.floor(k0 * dpr)) / dpr;
-  if (s < k0 * 0.8) s = k0; // a whole-pixel scale that would leave the screen much smaller: fill it instead
+  if (s < k0 * 0.8) s = k0;
   const cw = Math.round(W * s), ch = Math.round(H * s);
-  const bh = ch + u * 17;
-  place(bezelEl, bx, by, bw, bh); bezelEl.style.borderRadius = `${u * 2}px ${u * 2}px ${u * 12}px ${u * 2}px`;
-  place(document.getElementById('s1'), u * 3, u * 4, bw - u * 6, Math.max(1, u * 0.55)); place(document.getElementById('s2'), u * 3, u * 5.4, bw - u * 6, Math.max(1, u * 0.55));
-  const st = document.getElementById('stext'); place(st, bw / 2, u * 5.05); st.style.fontSize = u * 2.15 + 'px'; st.style.padding = `0 ${u * 1.5}px`;
-  const scrX = (bw - cw) / 2 + u * 2.5, scrY = u * 9;
-  const bb = by + bh, shift = Math.max(0, Dh - sa.b - bb - u * 92) * 0.5; // the controls sit in the middle of what is left
-  place(screenEl, scrX, scrY, cw, ch);
-  const led = bezelEl.querySelector('.led'); place(led, u * 5.3, scrY + ch * 0.3, u * 2.2, u * 2.2);
-  const ll = bezelEl.querySelector('.ledlabel'); place(ll, u * 6.4, scrY + ch * 0.3 + u * 3.4); ll.style.fontSize = u * 1.8 + 'px';
-  // the name under the bezel, where the maker's logo sits on the real one
-  const brand = document.getElementById('brand'); place(brand, bx, by + bh + u * 4.5);
-  brand.querySelector('.small').style.fontSize = u * 4.4 + 'px'; brand.querySelector('.big').style.fontSize = u * 7.2 + 'px';
+  place(screenEl, (lcdW - cw) / 2, (lcdH - ch) / 2, cw, ch);
   canvas.width = W; canvas.height = H;
   for (const c of [canvas, hudCanvas]) { c.style.width = cw + 'px'; c.style.height = ch + 'px'; }
   hudScale = s * dpr;
   hudCanvas.width = Math.round(W * hudScale); hudCanvas.height = Math.round(H * hudScale);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
-  // the controls, at the real one's positions (in % of width; the body is 164.5 units tall)
-  const at = (x, y) => [x * u, (y - 72.5) * u + bb + shift]; // the real one's positions, below its bezel
-  const ds = u * 23, [dx, dy] = at(22.5, 109);
+  // the name, where the maker's logo sits on the real one
+  const bb = bezY + bezH, brand = el('brand');
+  brand.querySelector('.small').style.fontSize = u * 4.3 + 'px'; brand.querySelector('.big').style.fontSize = u * 6.6 + 'px';
+  place(brand, bezX - u * 0.5, bb + u * 4.6);
+  // everything below: the real one's positions, measured from its bezel's lower edge (78.3 units down)
+  const shift = Math.max(0, Dh - sa.b - bb - u * (166 - 78.3)) * 0.5;
+  const at = (x, y) => [x * u, (y - 78.3) * u + bb + shift];
+  // d-pad: a round dish in the shell, four small arrows moulded round it, the cross on top
+  const [dx, dy] = at(21.1, 113), ds = u * 24.6;
+  place(el('dwell'), dx - u * 15.5, dy - u * 15.5, u * 31, u * 31); el('dwell').style.borderRadius = '50%';
+  const mk = (id, x, y, dir) => { const e = el(id), a = u * 1.1; e.style.borderWidth = a + 'px'; e.style.borderColor = 'transparent';
+    e.style[`border${dir}Color`] = '#a8a6a2'; place(e, x - a, y - a); };
+  mk('mU', dx, dy - u * 17.2, 'Bottom'); mk('mD', dx, dy + u * 17.2, 'Top'); mk('mL', dx - u * 17.2, dy, 'Right'); mk('mR', dx + u * 17.2, dy, 'Left');
   place(dpad, dx - ds / 2, dy - ds / 2, ds, ds);
-  const tri = (id, dir) => { const e = document.getElementById(id), a = u * 1.6, c = '#4a4b55'; e.style.borderWidth = a + 'px';
-    e.style.borderColor = 'transparent'; e.style[`border${dir}Color`] = c;
-    if (dir === 'Bottom') { e.style.left = ds / 2 - a + 'px'; e.style.top = u * 1.2 - a + 'px'; }
-    if (dir === 'Top') { e.style.left = ds / 2 - a + 'px'; e.style.top = ds - u * 1.2 - a + 'px'; }
-    if (dir === 'Right') { e.style.top = ds / 2 - a + 'px'; e.style.left = u * 1.2 - a + 'px'; }
-    if (dir === 'Left') { e.style.top = ds / 2 - a + 'px'; e.style.left = ds - u * 1.2 - a + 'px'; } };
-  tri('arU', 'Bottom'); tri('arD', 'Top'); tri('arL', 'Right'); tri('arR', 'Left');
-  const aS = u * 11.5, [ax, ay] = at(86, 105.5), [bx2, by2] = at(70.5, 113);
-  place(document.getElementById('bA'), ax - aS / 2, ay - aS / 2, aS, aS); place(document.getElementById('bB'), bx2 - aS / 2, by2 - aS / 2, aS, aS);
-  const lab = (id, x, y, size, rot) => { const e = document.getElementById(id); e.style.fontSize = size + 'px'; e.style.left = '0px'; e.style.top = '0px';
+  const arm = ds * 0.34, rl = ds * 0.22, ro = (ds - arm) / 2;
+  place(el('rU'), ro + arm * 0.18, ds * 0.05, arm * 0.64, rl); place(el('rD'), ro + arm * 0.18, ds * 0.95 - rl, arm * 0.64, rl);
+  place(el('rL'), ds * 0.05, ro + arm * 0.18, rl, arm * 0.64); place(el('rR'), ds * 0.95 - rl, ro + arm * 0.18, rl, arm * 0.64);
+  place(el('dimple'), ds / 2 - ds * 0.12, ds / 2 - ds * 0.12, ds * 0.24, ds * 0.24);
+  // A and B in one slanted dish, their letters below and to the right
+  const aS = u * 12, [ax, ay] = at(86.6, 107.4), [bx, by] = at(70.4, 114.8);
+  const wl = Math.hypot(ax - bx, ay - by) + u * 15.5, wh = u * 15.5, ang = Math.atan2(ay - by, ax - bx);
+  const aw = el('abwell'); place(aw, (ax + bx) / 2 - wl / 2, (ay + by) / 2 - wh / 2, wl, wh); aw.style.borderRadius = wh / 2 + 'px'; aw.style.transform = `rotate(${ang}rad)`;
+  place(el('bA'), ax - aS / 2, ay - aS / 2, aS, aS); place(el('bB'), bx - aS / 2, by - aS / 2, aS, aS);
+  const lab = (id, x, y, size, rot) => { const e = el(id); e.style.fontSize = size + 'px'; e.style.left = '0px'; e.style.top = '0px'; e.style.transform = '';
     const w = e.offsetWidth, h = e.offsetHeight; place(e, x - w / 2, y - h / 2); e.style.transform = `rotate(${rot}deg)`; };
-  lab('lA', ax + u * 3.5, ay + aS / 2 + u * 3.6, u * 3.2, 0); lab('lB', bx2 + u * 3.5, by2 + aS / 2 + u * 3.6, u * 3.2, 0);
-  // SELECT and START: slanted rubber keys, their names printed below on the same slant
-  const pw = u * 12, ph = u * 3.6, rot = -25;
-  for (const [id, lid, x0, y0] of [['bMute', 'lMute', 37, 135], ['bStart', 'lStart', 54, 135]]) {
-    const [x, y] = at(x0, y0);
-    const e = document.getElementById(id); place(e, x - pw / 2, y - ph / 2, pw, ph); e.style.transform = `rotate(${rot}deg)`;
-    lab(lid, x - u * 1.8, y + u * 6, u * 2.6, rot);
+  { const [x, y] = at(75.7, 126.4); lab('lB', x, y, u * 3.4, 0); } { const [x, y] = at(91.9, 118.5); lab('lA', x, y, u * 3.4, 0); }
+  // SELECT and START: each key in its own slot, slanted, with its name printed below on the same slant
+  const rot = -25;
+  for (const [wid, id, lid, x0, lx] of [['wSel', 'bMute', 'lMute', 37, 39], ['wStart', 'bStart', 'lStart', 53.9, 56]]) {
+    const [x, y] = at(x0, 135.6);
+    const w = el(wid); place(w, x - u * 7.8, y - u * 3.1, u * 15.6, u * 6.2); w.style.borderRadius = u * 3.1 + 'px'; w.style.transform = `rotate(${rot}deg)`;
+    const k = el(id); place(k, x - u * 6, y - u * 1.8, u * 12, u * 3.6); k.style.transform = `rotate(${rot}deg)`;
+    const [lx2, ly2] = at(lx, 143.6); lab(lid, lx2, ly2, u * 2.75, rot);
   }
-  // the speaker: six slanted slots in the lower right, and the notch at the bottom
-  const gr = document.getElementById('grille');
+  // the speaker: six slots leaning right, cut through the shell in the lower right
+  const gr = el('grille');
   if (!gr.children.length) for (let i = 0; i < 6; i++) { const e = document.createElement('div'); e.className = 'slot'; gr.appendChild(e); }
-  [...gr.children].forEach((e, i) => { const [x, y] = at(69 + i * 4.4, 133); place(e, x, y, u * 1.7, u * 20); e.style.transform = 'rotate(-30deg)'; });
-  place(document.getElementById('notchB'), Dw / 2 - u * 9, Dh - Math.max(u * 4.6, sa.b + u * 1.5), u * 18, u * 3.4);
+  [...gr.children].forEach((e, i) => { const [x, y] = at(66.9 + i * 5.56, 153.7 - i * 2.4); place(e, x - u * 1.3, y - u * 8.6, u * 2.6, u * 17.2); e.style.transform = 'rotate(30deg)'; });
+  // the headphone notch at the bottom edge
+  place(el('phones'), Dw / 2 - u * 14, Dh - Math.max(u * 4.4, sa.b + u * 1.2), u * 16, u * 3.4);
 }
 addEventListener('resize', fit);
 function rect(x, y, w, h, c) { ctx.fillStyle = col(c); ctx.fillRect(Math.round(x), Math.round(y), w, h); }
