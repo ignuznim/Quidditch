@@ -10,66 +10,84 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>퀴디치 포켓</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none;
-    background: radial-gradient(circle at 50% 30%, #2d2350, #120a24 70%);
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; background: #1b1a22;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none;
     font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif; }
   body { font-variant-numeric: tabular-nums; }
-  /* The handheld: our own console shell around the game, with its buttons wired to the game's keys */
-  #device { position: absolute; border-radius: 26px; touch-action: none;
-    background: linear-gradient(160deg, #6a58c4 0%, #5546a8 45%, #43378c 100%);
-    box-shadow: inset 0 3px 0 rgba(255,255,255,0.25), inset 0 -6px 0 rgba(0,0,0,0.25), 0 18px 40px rgba(0,0,0,0.55); }
-  #bezel { position: absolute; background: #241e3d; border-radius: 14px 14px 30px 14px;
-    box-shadow: inset 0 0 0 2px #15102a, inset 0 4px 10px rgba(0,0,0,0.5); }
-  #bezel .led { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #ff5a5a; box-shadow: 0 0 8px #ff5a5a; }
-  #bezel .brand { position: absolute; left: 0; right: 0; text-align: center; color: #cfc6ff; font-weight: 900;
-    font-style: italic; letter-spacing: 0.08em; white-space: nowrap; }
-  #bezel .brand b { color: #ffd84a; }
-  #screen { position: absolute; background: #000; box-shadow: 0 0 0 2px #0c0818; }
+  /* The handheld: a classic grey brick, drawn here in our own name. Its buttons drive the game's keys. */
+  #device { position: absolute; touch-action: none; border-radius: 16px 16px 72px 16px;
+    background: linear-gradient(170deg, #d6d4cd 0%, #c8c6bf 40%, #bdbbb3 100%);
+    box-shadow: inset 0 2px 0 #eeece6, inset 0 -5px 0 #9f9d96, inset -4px 0 0 #a9a79f, 0 20px 44px rgba(0,0,0,0.6); }
+  .groove { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid #a8a69f; border-bottom: 1px solid #e9e7e1; }
+  .groove-v { position: absolute; width: 0; border-left: 2px solid #a8a69f; border-right: 1px solid #e9e7e1; }
+  .offon { position: absolute; color: #8e8c86; font: italic 800 10px Arial, Helvetica, sans-serif; letter-spacing: 0.08em; }
+  #bezel { position: absolute; background: #5d5f72; border-radius: 10px 10px 42px 10px; box-shadow: inset 0 1px 0 #6f7186, inset 0 -2px 0 #4a4c5c; }
+  #bezel .stripe { position: absolute; height: 2px; }
+  #bezel .stripetext { position: absolute; color: #d0cec8; font: italic 700 9px Arial, Helvetica, sans-serif; letter-spacing: 0.05em;
+    background: #5d5f72; padding: 0 5px; white-space: nowrap; transform: translate(-50%, -50%); }
+  #bezel .led { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: #ff3b3b;
+    box-shadow: 0 0 6px #ff3b3b, inset 0 -1px 0 #a01818; }
+  #bezel .ledlabel { position: absolute; color: #c8c6c0; font: 700 7px Arial, Helvetica, sans-serif; letter-spacing: 0.06em; transform: translateX(-50%); }
+  .brand { position: absolute; color: #2b3480; white-space: nowrap; font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+    font-style: italic; font-weight: 900; letter-spacing: 0.02em; }
+  .brand small { font-weight: 700; letter-spacing: 0.04em; margin-right: 0.4em; }
+  #screen { position: absolute; background: #000; box-shadow: 0 0 0 2px #2f303d; }
   #screen canvas { display: block; position: absolute; left: 0; top: 0; touch-action: none; }
   #game { image-rendering: pixelated; image-rendering: crisp-edges; }
   #hud { pointer-events: none; }
   #pad { position: absolute; inset: 0; pointer-events: none; }
   #pad > * { pointer-events: auto; }
-  .dpad { position: absolute; width: 150px; height: 150px; transform-origin: 0 0; }
-  .dpad .arm { position: absolute; background: #2a2440; border: 3px solid #120a24; border-radius: 7px; box-shadow: 0 4px 0 #120a24; }
-  .dpad .h { left: 0; top: 50px; width: 144px; height: 44px; }
-  .dpad .v { left: 50px; top: 0; width: 44px; height: 144px; }
-  .dpad .hub { position: absolute; left: 59px; top: 59px; width: 32px; height: 32px; border-radius: 50%; background: #1d1833; }
-  .dpad .tip { position: absolute; width: 0; height: 0; border: 9px solid transparent; }
-  .dpad .up { left: 63px; top: 8px; border-bottom-color: #8f86c0; }
-  .dpad .dn { left: 63px; bottom: 8px; border-top-color: #8f86c0; }
-  .dpad .lf { left: 8px; top: 63px; border-right-color: #8f86c0; }
-  .dpad .rt { right: 8px; top: 63px; border-left-color: #8f86c0; }
-  .dpad.on-up .up { border-bottom-color: #ffd84a; } .dpad.on-dn .dn { border-top-color: #ffd84a; }
-  .dpad.on-lf .lf { border-right-color: #ffd84a; } .dpad.on-rt .rt { border-left-color: #ffd84a; }
-  .btn { position: absolute; border-radius: 50%; border: 3px solid #120a24; color: #fff4dc; background: #d8456a;
-    display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 5px 0 #120a24; }
-  .btn.down { transform: translateY(4px); box-shadow: 0 1px 0 #120a24; filter: brightness(1.2); }
-  .btn span { text-align: center; line-height: 1; }
-  .btn small { display: block; font-size: 0.42em; font-weight: 700; margin-top: 2px; }
-  #bB { background: #c23a5e; }
-  .pill { position: absolute; height: 18px; width: 56px; border-radius: 9px; background: #2a2440; border: 2px solid #120a24;
-    transform: rotate(-22deg); box-shadow: 0 3px 0 #120a24; }
-  .pill.down { background: #ffd84a; transform: rotate(-22deg) translateY(2px); box-shadow: 0 1px 0 #120a24; }
-  .pill-label { position: absolute; color: #d8d0ff; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; pointer-events: none; }
-  .grille { position: absolute; pointer-events: none !important;
-    background: radial-gradient(circle, #2c2358 38%, transparent 42%) 0 0 / 12px 12px; opacity: 0.9; border-radius: 8px; }
+  #pad > .lab, #pad > .hint, #pad > .grille, #pad > .well { pointer-events: none; }
+  .well { position: absolute; border-radius: 50%; background: radial-gradient(circle, #b5b3ab 55%, #c4c2ba 70%, transparent 71%); }
+  .dpad { position: absolute; width: 150px; height: 150px; transform-origin: 0 0; filter: drop-shadow(0 4px 0 #6f6d68); }
+  .dpad .arm { position: absolute; background: linear-gradient(180deg, #2c2c33, #17171c); border-radius: 6px; }
+  .dpad .h { left: 0; top: 50px; width: 150px; height: 50px; }
+  .dpad .v { left: 50px; top: 0; width: 50px; height: 150px; }
+  .dpad .hub { position: absolute; left: 61px; top: 61px; width: 28px; height: 28px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, #121216, #2a2a31); }
+  .dpad .tip { position: absolute; width: 0; height: 0; border: 8px solid transparent; }
+  .dpad .up { left: 67px; top: 10px; border-bottom-color: #44444e; }
+  .dpad .dn { left: 67px; bottom: 10px; border-top-color: #44444e; }
+  .dpad .lf { left: 10px; top: 67px; border-right-color: #44444e; }
+  .dpad .rt { right: 10px; top: 67px; border-left-color: #44444e; }
+  .dpad.on-up .up { border-bottom-color: #9a9aa8; } .dpad.on-dn .dn { border-top-color: #9a9aa8; }
+  .dpad.on-lf .lf { border-right-color: #9a9aa8; } .dpad.on-rt .rt { border-left-color: #9a9aa8; }
+  .btn { position: absolute; border-radius: 50%; background: radial-gradient(circle at 40% 32%, #c8357a, #9c1b55 62%, #7c1243);
+    box-shadow: 0 4px 0 #5e0e33, 0 6px 6px rgba(0,0,0,0.25); }
+  .btn.down { transform: translateY(3px); box-shadow: 0 1px 0 #5e0e33; filter: brightness(0.92); }
+  .btn-well { position: absolute; border-radius: 999px; background: #b3b1a9; box-shadow: inset 0 2px 3px rgba(0,0,0,0.18); transform-origin: 50% 50%; pointer-events: none !important; }
+  .lab { position: absolute; color: #2b3480; font: italic 900 15px "Arial Black", Arial, sans-serif; transform: translateX(-50%); white-space: nowrap; }
+  .hint { position: absolute; color: #6f6d78; font-size: 10px; font-weight: 700; transform: translateX(-50%); white-space: nowrap; }
+  .pill { position: absolute; width: 50px; height: 14px; border-radius: 7px; background: linear-gradient(180deg, #9a98a2, #7c7a84);
+    border: 2px solid #6a6872; transform: rotate(-25deg); box-shadow: 0 2px 0 #77757e; }
+  .pill.down { transform: rotate(-25deg) translateY(2px); box-shadow: none; filter: brightness(0.9); }
+  .grille { position: absolute; }
+  .grille i { position: absolute; width: 6px; border-radius: 3px; background: #9b998f; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.35); transform: rotate(-30deg); }
 </style>
 </head>
 <body>
 <div id="device">
-  <div id="bezel"><div class="led"></div>
+  <div class="groove" id="groove"></div><div class="groove-v" id="grooveL"></div><div class="groove-v" id="grooveR"></div>
+  <div class="offon" id="offon">&#9664; OFF&middot;ON &#9654;</div>
+  <div id="bezel">
+    <div class="stripe" id="s1" style="background:#8c2e52"></div><div class="stripe" id="s2" style="background:#2e3378"></div>
+    <div class="stripetext" id="stext">PIXEL SKY WITH SQUARE-WAVE SOUND</div>
+    <div class="led"></div><div class="ledlabel">POWER</div>
     <div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
-    <div class="brand">QUIDDITCH <b>POCKET</b></div></div>
+  </div>
+  <div class="brand" id="brand"><small>QUIDDITCH</small>POCKET</div>
   <div id="pad">
+    <div class="well" id="dwell"></div>
     <div class="dpad" id="dpad"><div class="arm h"></div><div class="arm v"></div><div class="hub"></div>
       <div class="tip up"></div><div class="tip dn"></div><div class="tip lf"></div><div class="tip rt"></div></div>
-    <div class="btn" id="bB"><span>B<small>돌진</small></span></div>
-    <div class="btn" id="bA"><span>A<small>패스·슛</small></span></div>
-    <div class="pill" id="bMute"></div><div class="pill-label" id="lMute">소리</div>
-    <div class="pill" id="bStart"></div><div class="pill-label" id="lStart">START</div>
-    <div class="grille" id="grille"></div>
+    <div class="btn-well" id="abwell"></div>
+    <div class="btn" id="bB"></div><div class="btn" id="bA"></div>
+    <div class="lab" id="lB">B</div><div class="lab" id="lA">A</div>
+    <div class="hint" id="hB">몸 날리기</div><div class="hint" id="hA">패스·던지기</div>
+    <div class="pill" id="bMute"></div><div class="pill" id="bStart"></div>
+    <div class="lab" id="lMute">SELECT</div><div class="lab" id="lStart">START</div>
+    <div class="hint" id="hMute">소리</div><div class="hint" id="hStart">일시정지</div>
+    <div class="grille" id="grille"><i></i><i></i><i></i><i></i><i></i><i></i></div>
   </div>
 </div>
 <script src="config.js"></script>
@@ -87,8 +105,8 @@ const W = 208, H = 160;         // the pixel screen: a close view, so riders rea
 const PIXEL = true;             // crisp scale, no smoothing
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif';
 const TITLE = '퀴디치 포켓';
-const CONTROLS = ['방향키 / WASD: 이동', 'Z: 짧게 패스, 길게 눌렀다 떼면 슛', 'X: 돌진해서 빼앗기', 'Enter: 일시정지 · M: 소리'];
-const TOUCH_CONTROLS = ['십자키: 이동', 'A: 짧게 패스, 길게 눌렀다 떼면 슛', 'B: 돌진해서 빼앗기', 'START: 일시정지'];
+const CONTROLS = ['당신은 그리핀도르 파수꾼!', '방향키: 이동 · X: 몸 날려 막기', 'Z: 짧게 패스, 길게 멀리 던지기', 'Enter: 일시정지 · M: 소리'];
+const TOUCH_CONTROLS = ['당신은 그리핀도르 파수꾼!', '십자키: 이동 · B: 몸 날려 막기', 'A: 짧게 패스, 길게 멀리 던지기', 'START: 일시정지 · SELECT: 소리'];
 const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
 const CHEAP = params.get('render') === 'cheap';
 let seed;
@@ -124,47 +142,66 @@ const place = (el, x, y, w, h) => { el.style.left = Math.round(x) + 'px'; el.sty
 function fit() {
   const iw = innerWidth, ih = innerHeight, wide = iw > ih * 1.15, dpr = devicePixelRatio || 1;
   let Dw, Dh, side = 0;
-  if (wide) { Dh = Math.min(ih, 640); Dw = Math.min(iw, Dh * 2.3); side = Math.min(Dw * 0.2, Dh * 0.46); }
-  else { Dw = Math.min(iw, ih * 0.62, 540); Dh = Math.min(ih, Dw * 1.85); }
-  const rim = wide ? Dh * 0.04 : Dw * 0.03, bp = wide ? Math.max(8, Dw * 0.01) : Math.max(6, Dw * 0.02), brandH = Math.max(16, (wide ? Dh : Dw) * 0.05);
-  const maxW = wide ? Dw - 2 * side - 2 * bp : Dw - 2 * rim - 2 * bp;
-  const maxH = wide ? Dh - 2 * rim - 2 * bp - brandH : Dh * 0.5;
+  if (wide) { Dh = Math.min(ih, 640); Dw = Math.min(iw, Dh * 2.3); side = Math.min(Dw * 0.21, Dh * 0.48); }
+  else { Dw = Math.min(iw, ih * 0.6, 540); Dh = Math.min(ih, Dw * 1.78); }
+  const u = wide ? Dh / 100 : Dw / 100; // one layout unit
+  const rimX = wide ? side : u * 6, top = wide ? u * 7 : u * 10;
+  const bpX = u * (wide ? 8 : 9), bpT = u * (wide ? 4.5 : 7), bpB = u * (wide ? 4 : 6);
+  const maxW = Dw - 2 * rimX - 2 * bpX, maxH = wide ? Dh - top - bpT - bpB - u * 16 : Dh * 0.42;
   const k = Math.min(maxW / W, maxH / H);
-  // CSS pixels per art pixel: a whole number of device pixels, unless the screen is so dense
+  // CSS pixels per art pixel: a whole number of device pixels, unless the screen is dense enough
   // (3 or more device pixels per art pixel) that an uneven pixel cannot be seen
   const s = k * dpr >= 3 ? k : Math.max(1, Math.floor(k * dpr)) / dpr;
   const cw = Math.round(W * s), ch = Math.round(H * s);
   place(deviceEl, (iw - Dw) / 2, (ih - Dh) / 2, Dw, Dh);
-  const bw = cw + 2 * bp, bh = ch + 2 * bp + brandH;
-  const bx = (Dw - bw) / 2, by = wide ? (Dh - bh) / 2 : rim;
-  place(bezelEl, bx, by, bw, bh);
-  place(screenEl, (bw - cw) / 2, bp, cw, ch);
-  const led = bezelEl.querySelector('.led'); place(led, Math.max(3, (bw - cw) / 2 - 7), bp + ch * 0.3);
-  const brand = bezelEl.querySelector('.brand'); brand.style.top = Math.round(bp + ch + brandH * 0.12) + 'px'; brand.style.fontSize = Math.round(brandH * 0.62) + 'px';
+  deviceEl.style.borderRadius = `${u * 3}px ${u * 3}px ${u * (wide ? 10 : 15)}px ${u * 3}px`;
+  // the top groove and the OFF-ON mark
+  place(document.getElementById('groove'), 0, u * 5.5); place(document.getElementById('grooveL'), u * 6, 0, null, u * 5.5); place(document.getElementById('grooveR'), Dw - u * 6, 0, null, u * 5.5);
+  const offon = document.getElementById('offon'); place(offon, u * 9, u * 1.4); offon.style.fontSize = Math.max(8, u * 2.3) + 'px';
+  // the bezel: two stripes and a line of text along its top, the power light, the screen
+  const bw = cw + 2 * bpX, bh = ch + bpT + bpB;
+  const bx = (Dw - bw) / 2, by = top;
+  place(bezelEl, bx, by, bw, bh); bezelEl.style.borderRadius = `${u * 2}px ${u * 2}px ${u * 9}px ${u * 2}px`;
+  const sy = bpT * 0.45;
+  place(document.getElementById('s1'), u * 2, sy - 2, bw - u * 4, 2); place(document.getElementById('s2'), u * 2, sy + 2, bw - u * 4, 2);
+  const st = document.getElementById('stext'); place(st, bw / 2, sy + 1); st.style.fontSize = Math.max(7, u * 1.8) + 'px';
+  place(screenEl, bpX, bpT, cw, ch);
+  const led = bezelEl.querySelector('.led'); place(led, bpX / 2 - 4, bpT + ch * 0.32);
+  const ll = bezelEl.querySelector('.ledlabel'); place(ll, bpX / 2, bpT + ch * 0.32 + 12); ll.style.fontSize = Math.max(6, u * 1.5) + 'px';
+  // the name under the screen
+  const brand = document.getElementById('brand'); brand.style.fontSize = Math.round(u * (wide ? 5 : 5.2)) + 'px';
+  place(brand, bx + u * 1, by + bh + u * 1.2);
   canvas.width = W; canvas.height = H;
   for (const c of [canvas, hudCanvas]) { c.style.width = cw + 'px'; c.style.height = ch + 'px'; }
   hudScale = s * dpr;
   hudCanvas.width = Math.round(W * hudScale); hudCanvas.height = Math.round(H * hudScale);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
   // the controls
-  const unit = wide ? Math.min(side, Dh * 0.5) : Math.min(Dw, (Dh - by - bh) * 1.1);
-  const ds = Math.min(150, unit * 0.42), aS = Math.min(84, unit * 0.22), bS = aS * 0.85;
-  let dx, dy, ax, ay, bx2, by2, py;
-  if (wide) { dx = side / 2; dy = Dh * 0.5; ax = Dw - side * 0.3; ay = Dh * 0.43; bx2 = Dw - side * 0.68; by2 = Dh * 0.58; py = Dh - 26; }
-  else {
-    const top = by + bh, h = Dh - top;
-    dx = Dw * 0.26; dy = top + h * 0.42; ax = Dw * 0.8; ay = top + h * 0.32; bx2 = Dw * 0.58; by2 = top + h * 0.5; py = top + h * 0.82;
-  }
+  const ctop = by + bh + u * 8, ch2 = Dh - ctop;
+  const ds = Math.min(160, u * (wide ? 30 : 32)), aS = u * (wide ? 12 : 13);
+  let dx, dy, ax, ay, bx2, by2, selX, startX, pillY;
+  if (wide) { dx = side / 2; dy = Dh * 0.48; ax = Dw - side * 0.28; ay = Dh * 0.42; bx2 = Dw - side * 0.62; by2 = Dh * 0.52; selX = side * 0.35; startX = side * 0.75; pillY = Dh * 0.82; }
+  else { dx = Dw * 0.24; dy = ctop + ch2 * 0.24; ax = Dw * 0.82; ay = ctop + ch2 * 0.16; bx2 = Dw * 0.6; by2 = ctop + ch2 * 0.27; selX = Dw * 0.38; startX = Dw * 0.6; pillY = ctop + ch2 * 0.6; }
+  if (wide) { startX = Dw - side * 0.5; selX = side * 0.5; }
+  place(document.getElementById('dwell'), dx - ds * 0.62, dy - ds * 0.62, ds * 1.24, ds * 1.24);
   dpad.style.transform = `scale(${ds / 150})`; place(dpad, dx - ds / 2, dy - ds / 2);
   const bA = document.getElementById('bA'), bB = document.getElementById('bB');
-  place(bA, ax - aS / 2, ay - aS / 2, aS, aS); bA.style.fontSize = Math.round(aS * 0.38) + 'px';
-  place(bB, bx2 - bS / 2, by2 - bS / 2, bS, bS); bB.style.fontSize = Math.round(bS * 0.38) + 'px';
-  // 소리 and START: side by side under the buttons when upright; one in each side panel when wide
-  const mx = wide ? side / 2 : Dw / 2 - 36, sx2 = wide ? Dw - side / 2 : Dw / 2 + 36, my = wide ? Dh * 0.82 : py;
-  place(document.getElementById('bMute'), mx - 28, my - 9); place(document.getElementById('lMute'), mx - 20, my + 14);
-  place(document.getElementById('bStart'), sx2 - 28, my - 9); place(document.getElementById('lStart'), sx2 - 22, my + 14);
+  place(bA, ax - aS / 2, ay - aS / 2, aS, aS); place(bB, bx2 - aS / 2, by2 - aS / 2, aS, aS);
+  const well = document.getElementById('abwell'), wl = Math.hypot(ax - bx2, ay - by2) + aS * 1.35, ang = Math.atan2(ay - by2, ax - bx2);
+  place(well, (ax + bx2) / 2 - wl / 2, (ay + by2) / 2 - aS * 0.68, wl, aS * 1.36); well.style.transform = `rotate(${ang}rad)`;
+  const labSize = Math.max(11, u * 3.4) + 'px', hintSize = Math.max(9, u * 2.4) + 'px';
+  for (const [id, x, y] of [['lA', ax, ay + aS * 0.62], ['lB', bx2, by2 + aS * 0.62]]) { const e = document.getElementById(id); place(e, x, y); e.style.fontSize = labSize; }
+  for (const [id, x, y] of [['hA', ax, ay + aS * 0.62 + u * 4.2], ['hB', bx2, by2 + aS * 0.62 + u * 4.2]]) { const e = document.getElementById(id); place(e, x, y); e.style.fontSize = hintSize; }
+  const pw = u * 11, ph = u * 3;
+  for (const [id, x] of [['bMute', selX], ['bStart', startX]]) { const e = document.getElementById(id); place(e, x - pw / 2, pillY - ph / 2, pw, ph); }
+  for (const [id, x] of [['lMute', selX], ['lStart', startX]]) { const e = document.getElementById(id); place(e, x, pillY + u * 4.2); e.style.fontSize = Math.max(9, u * 2.4) + 'px'; }
+  for (const [id, x] of [['hMute', selX], ['hStart', startX]]) { const e = document.getElementById(id); place(e, x, pillY + u * 8); e.style.fontSize = hintSize; }
   const gr = document.getElementById('grille');
-  if (wide) gr.style.display = 'none'; else { gr.style.display = 'block'; place(gr, Dw - 82, Dh - 70, 60, 48); }
+  if (wide) gr.style.display = 'none';
+  else {
+    gr.style.display = 'block'; place(gr, Dw - u * 30, Dh - u * 22, u * 24, u * 16);
+    [...gr.children].forEach((i, n) => { place(i, n * u * 3.6, 0, u * 1.4, u * 14); });
+  }
 }
 addEventListener('resize', fit);
 function rect(x, y, w, h, c) { ctx.fillStyle = col(c); ctx.fillRect(Math.round(x), Math.round(y), w, h); }
@@ -204,6 +241,15 @@ const SPR = {
   rivalKeeper: [ // horned helmet
     '..g.......g', '..gg.3333.gg', '...33pppp33', '...3tsssst3', '...3ts3sst3', '.333tttttt333', '3ww3tttttt3ww3',
     '3ww3tttttt3ww3', '.333tttttt333', '...3tttttt3', 'hhhhbbbbbbbbbbb', 'h.h.33..33', '....33..33'],
+  usBeater: [ // a bat held high
+    '......333..33', '.....3ooo33bb3', '....3ooooo3bb3', '....3oss3o3b3', '....3osss3sb', '.O...3oo3s3', '.OO.3oooooo3',
+    '.OOo3oooo03', '..3ooooo3', '..3oooo3', 'hhhhbbbbbbbbbbb', 'h.h.3..3', '....33'],
+  usBeaterSwing: [ // the swing: bat out in front
+    '......333', '.....3ooo3', '....3ooooo3', '....3oss3o3', '....3osss3', '.O...3oo3...3333', '.OO.3ooooosbbbbb3',
+    '.OOo3oooo0s.3333', '..3ooooo3', '..3oooo3', 'hhhhbbbbbbbbbbb', 'h.h.3..3', '....33'],
+  usSeeker: [ // slim, goggles, a long striped scarf
+    '.......333', '......3ooo3', '.....3ooooo3', '.....3oyyyo3', '.....3osss3', 'yoyo.y3oo3', '..oyoy3ooos3',
+    '......3oo0s3', '.....3ooo3', '.....3oo3', 'hhhhbbbbbbbbbbb', 'h.h.3..3', '....33'],
   volla: ['..333..', '.3rrr3.', '3rr0rr3', '3r0rrR3', '3rrr0R3', '.3RRR3.', '..333..'],
   rumbler: ['....f....', '.f.333.f.', '..33333..', '.33g3333.', 'f3g33333f', '.3333333.', '..33333..', '.f.333.f.', '....f....'],
   glimmerA: ['ww.....ww', '.www.www.', '...3y3...', '..3yyY3..', '...3Y3...'],
@@ -211,6 +257,13 @@ const SPR = {
   hawk: ['o.....o', 'oo.o.oo', '.ooooo.', '..ooo..', '...o...'],
   crow: ['..tt...', 'tttttt.', '.tttt.t', '..tt...', '.t.t...'],
 };
+// the rival beater and seeker: the same build in 슬리데린 green, with a pointed hat
+for (const k of ['usBeater', 'usBeaterSwing', 'usSeeker']) {
+  const rows = SPR[k].map(r => r.replace(/o/g, 't').replace(/O/g, 'T'));
+  const head = rows.findIndex(r => r.includes('3'));
+  const col = rows[head].indexOf('3') + 1;
+  SPR[k.replace('us', 'rival')] = ['.'.repeat(col + 1) + '3', '.'.repeat(col) + '3p3', ...rows];
+}
 const sprCache = new Map();
 function sprite(name, flip) {
   const key = name + (flip ? 'L' : 'R');
@@ -309,6 +362,7 @@ const SFX = {
   conceded() { [392, 311, 262].forEach((f, i) => tone(f, 0.16, 'square', 0.16, i * 0.12)); },
   save() { tone(200, 0.1, 'square', 0.2); tone(150, 0.12, 'triangle', 0.25, 0.05); },
   thud() { tone(120, 0.25, 'sawtooth', 0.28, 0, 0.4); },
+  bat() { tone(180, 0.06, 'square', 0.22); tone(90, 0.12, 'sawtooth', 0.18, 0.02); },
   steal() { tone(988, 0.05, 'square', 0.16); tone(1319, 0.08, 'square', 0.16, 0.05); },
   miss() { tone(220, 0.08, 'square', 0.1); },
   bell() { [1568, 2093, 1568, 2093].forEach((f, i) => tone(f, 0.14, 'square', 0.12, i * 0.12)); },
@@ -321,31 +375,43 @@ const SFX = {
 const TOP = 16, FLOOR = 134, MID = 78, HOOP_Y = [54, 78, 102];
 const hoopX = side => side > 0 ? tune.fieldWidth - 16 : 16; // side +1: the right end, which 그리핀도르 attacks
 let scene, state;
-function mkRider(id, team, role, x, y) {
-  return { id, team, role, x, y, px: x, py: y, vx: 0, vy: 0, face: team === 0 ? 1 : -1, stun: 0, dashT: 0, dashCd: 0,
-    dx: 0, dy: 0, immune: 0, holdT: 0, robbed: false, aiT: 0, sx: x, sy: y, bob: id * 1.7 };
+// Seven a side, as in the books: a keeper, three chasers, two beaters and a seeker.
+// You are 그리핀도르's keeper (rider 0), guarding the left hoops.
+const ROLES = ['keeper', 'chaser', 'chaser', 'chaser', 'beater', 'beater', 'seeker'];
+const ME = 0;
+function mkRider(id, team, role, slot, x, y) {
+  return { id, team, role, slot, x, y, px: x, py: y, vx: 0, vy: 0, face: team === 0 ? 1 : -1, stun: 0, dashT: 0, dashCd: 0,
+    dx: 0, dy: 0, immune: 0, holdT: 0, robbed: false, aiT: 0, sx: x, sy: y, bob: id * 1.7, batCd: 0, swing: 0 };
 }
 function reset() {
   seed = Number(params.get('seed')) || CONFIG.seed;
   const fw = tune.fieldWidth, mid = fw / 2;
-  const R = [
-    mkRider(0, 0, 'flyer', mid - 10, MID), mkRider(1, 0, 'flyer', mid - 40, MID - 20), mkRider(2, 0, 'keeper', 30, MID),
-    mkRider(3, 1, 'flyer', mid + 60, MID - 10), mkRider(4, 1, 'flyer', mid + 80, MID + 18), mkRider(5, 1, 'keeper', fw - 30, MID),
-  ];
-  R[0].immune = tune.kickoffGrace;
+  const R = [];
+  for (const team of [0, 1]) {
+    const back = team === 0 ? -1 : 1; // toward the end this team defends
+    ROLES.forEach((role, k) => {
+      let x, y, slot = 0;
+      if (role === 'keeper') { x = team === 0 ? 36 : fw - 36; y = MID; }
+      else if (role === 'chaser') { slot = k - 1; x = mid + back * (14 + slot * 8); y = MID - 28 + slot * 28; }
+      else if (role === 'beater') { slot = k - 4; x = mid + back * 46; y = slot ? MID + 30 : MID - 34; }
+      else { x = mid + back * 26; y = TOP + 16; }
+      R.push(mkRider(team * 7 + k, team, role, slot, x, y));
+    });
+  }
   state = {
     t: 0, score: [0, 0], gained: '', over: false, winner: -1, endReason: '', riders: R,
-    ball: { x: mid - 4, y: MID + 2, px: mid - 4, py: MID + 2, vx: 0, vy: 0, holder: 0, mode: 'held', team: 0, passTo: -1, age: 0, lastHolder: 0, tried: [], saveTried: false, perfect: false, trail: [] },
+    ball: { x: mid, y: MID - 20, px: mid, py: MID - 20, vx: 0, vy: -20, holder: -1, mode: 'free', team: -1, passTo: -1, age: 1, lastHolder: -1, tried: [], saveTried: false, perfect: false, trail: [], from: 0 },
     rumblers: [
-      { x: mid, y: 24, px: mid, py: 24, vx: 0, vy: 0, active: false, rest: 0, target: -1, retarget: 0 },
-      { x: mid + 40, y: 24, px: mid + 40, py: 24, vx: 0, vy: 0, active: false, rest: 0, target: -1, retarget: 0 },
+      { x: mid - 40, y: TOP + 8, px: mid - 40, py: TOP + 8, vx: 0, vy: 0, active: false, rest: 0, target: -1, retarget: 0, batT: 0, batTeam: -1 },
+      { x: mid + 40, y: TOP + 8, px: mid + 40, py: TOP + 8, vx: 0, vy: 0, active: false, rest: 0, target: -1, retarget: 0, batT: 0, batTeam: -1 },
     ],
     glimmer: { active: false, x: mid, y: MID - 30, px: mid, py: MID - 30, vx: 0, vy: 0, wx: 1, wy: 0, turnT: 0, dartT: 0 },
-    camX: mid - W / 2, camPX: mid - W / 2, shake: 0,
+    camX: 0, camPX: 0, shake: 0,
     charging: false, holdT: 0, actPrev: false, buffer: 0,
     msgs: [], lantern: { '1': 0, '-1': 0 }, cheer: 0, tut: 0, tutMoved: 0, glimmerNote: 0, resultsT: 0,
-    stats: { goals: 0, perfect: 0, steals: 0, hits: 0 },
+    stats: { saves: 0, conceded: 0, passes: 0, hits: 0, goals: 0 },
   };
+  state.camX = state.camPX = clamp(R[ME].x - W / 2 + 40, 0, fw - W);
 }
 const RD = () => state.riders;
 function ramp() { return Math.max(0, Math.min(1, (state.t - tune.laxUntil) / Math.max(1, tune.rampUntil - tune.laxUntil))); }
@@ -354,11 +420,14 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 function msg(s, dur = 1.6) { state.msgs = [{ s, t: dur }]; }
 function trailing(team) { return state.score[team] < state.score[1 - team]; }
+const attackSide = team => team === 0 ? 1 : -1;
+const nearCam = x => Math.abs(x - (state.camX + W / 2)) < W * 0.75;
 
 // ---- Flying -----------------------------------------------------------------------------
 /** Moves a rider one step toward the stick's direction; a dash overrides it. */
 function fly(r, ix, iy, dt, mult) {
   r.stun = Math.max(0, r.stun - dt); r.dashCd = Math.max(0, r.dashCd - dt); r.immune = Math.max(0, r.immune - dt);
+  r.batCd = Math.max(0, r.batCd - dt); r.swing = Math.max(0, r.swing - dt);
   if (r.stun > 0) { ix = Math.sin(state.t * 18 + r.id) * 0.5; iy = 0.4; mult *= 0.5; }
   const l = Math.hypot(ix, iy); if (l > 1) { ix /= l; iy /= l; }
   let tx = ix * tune.flySpeed * mult, ty = iy * tune.flySpeed * mult;
@@ -376,7 +445,7 @@ function startDash(r, dx, dy) {
   if (r.dashCd > 0 || r.stun > 0) return false;
   const l = Math.hypot(dx, dy); if (l < 0.1) { dx = r.face; dy = 0; } else { dx /= l; dy /= l; }
   r.dx = dx; r.dy = dy; r.dashT = tune.dashTime; r.dashCd = tune.dashCooldown; r.robbed = false;
-  if (r.id === 0) SFX.dash();
+  if (r.id === ME) SFX.dash();
   return true;
 }
 function steerInput(r, tx, ty) {
@@ -386,22 +455,28 @@ function steerInput(r, tx, ty) {
 }
 function speedMult(r) {
   let m = 1;
-  if (r.id !== 0) m = r.team === 1 ? lerp(tune.aiSpeedLax, tune.aiSpeedFull, ramp()) : tune.mateSpeed;
+  if (r.id !== ME) m = r.team === 1 ? lerp(tune.aiSpeedLax, tune.aiSpeedFull, ramp()) : tune.mateSpeed;
+  if (r.role === 'seeker') m *= tune.seekerBoost;
+  if (r.role === 'beater') m *= tune.beaterSpeed;
   if (trailing(r.team)) m *= tune.catchUpMult;
   return m;
 }
 
-// ---- The ball ---------------------------------------------------------------------------
+// ---- The quaffle -------------------------------------------------------------------------
+const canHold = r => r.role === 'chaser' || r.role === 'keeper';
 function give(r, how) {
   const b = state.ball;
   b.holder = r.id; b.mode = 'held'; b.team = r.team; b.passTo = -1; b.lastHolder = r.id; b.tried = []; b.trail = [];
   r.immune = Math.max(r.immune, tune.carryImmunity); r.holdT = 0;
-  if (r.id === 0 && state.buffer > 0) { state.charging = true; state.holdT = 0; state.buffer = 0; }
+  if (r.id === ME && state.buffer > 0) { state.charging = true; state.holdT = 0; state.buffer = 0; }
   events.push({ type: 'catch', how, rider: r.id, t: state.t });
-  if (how === 'save') { SFX.save(); msg(r.team === 0 ? '선방!' : '막혔다!'); }
-  else if (how === 'steal') { SFX.steal(); if (r.id === 0) { msg('빼앗았다!'); state.stats.steals++; } else if (r.team === 1 && state.ball.lastHolderPrev === 0) msg('빼앗겼다!'); }
-  else if (how === 'intercept') { SFX.steal(); msg(r.team === 1 ? '가로채였다!' : '가로챘다!'); }
-  else if (r.team === 0) SFX.catch();
+  if (how === 'save') {
+    SFX.save();
+    if (r.id === ME) { msg('선방!'); state.stats.saves++; if (state.tut < 2) state.tut = 2; }
+    else msg('막혔다!', 1.2);
+  } else if (how === 'steal') { SFX.steal(); if (r.id === ME) msg('빼앗았다!'); }
+  else if (how === 'intercept') { SFX.steal(); if (nearCam(r.x)) msg(r.team === 1 ? '가로채였다!' : '가로챘다!', 1.2); }
+  else if (r.team === 0 && nearCam(r.x)) SFX.catch();
 }
 function release(r) {
   const b = state.ball; b.holder = -1; b.age = 0; b.lastHolder = r.id; b.team = r.team; b.tried = []; b.saveTried = false;
@@ -412,26 +487,25 @@ function pass(r, to) {
   const dx = to.x - b.x, dy = to.y - b.y, l = Math.hypot(dx, dy) || 1;
   b.vx = dx / l * tune.passSpeed; b.vy = dy / l * tune.passSpeed; b.perfect = false;
   events.push({ type: 'pass', from: r.id, to: to.id, t: state.t });
-  if (r.team === 0) SFX.pass();
+  if (r.id === ME) { SFX.pass(); state.stats.passes++; }
 }
 function shoot(r, vx, vy, perfect) {
   const b = state.ball; release(r); b.mode = 'shot'; b.vx = vx; b.vy = vy; b.perfect = perfect;
-  b.from = Math.abs(hoopX(r.team === 0 ? 1 : -1) - r.x);
+  b.from = Math.abs(hoopX(attackSide(r.team)) - r.x);
   events.push({ type: 'shot', from: r.id, perfect, t: state.t });
-  if (Math.abs(r.x - RD()[0].x) < 120) SFX.shot(perfect);
+  if (nearCam(r.x)) SFX.shot(perfect);
 }
-/** A shot from rider r: straight ahead, tilted by the stick, bent into a hoop it nearly meets. */
-function aimedShot(r, tilt, speed) {
-  const side = r.team === 0 ? 1 : -1, gx = hoopX(side);
-  let vx = side * speed, vy = tilt * tune.aimTilt * speed;
-  if (Math.sign(r.face) !== side) vx = r.face * speed; // facing away: it goes where you face
-  const tt = (gx - r.x) / vx;
-  if (tt > 0) {
-    const yAt = r.y + vy * tt; let best = null, bd = 1e9;
-    for (const hy of HOOP_Y) { const d = Math.abs(hy - yAt); if (d < bd) { bd = d; best = hy; } }
-    if (bd < tune.aimAssist + (state.charging ? 0 : 0)) vy = (best - r.y) / tt;
+/** Your teammate to pass to: a chaser ahead and free of markers, else the nearest. */
+function passTarget(r) {
+  const side = attackSide(r.team), R = RD();
+  let best = null, bs = -1e9;
+  for (const o of R) {
+    if (o.team !== r.team || o.role !== 'chaser' || o.stun > 0) continue;
+    const mark = Math.min(...R.filter(f => f.team !== r.team && f.role === 'chaser').map(f => dist(f, o)));
+    const sc = (o.x - r.x) * side * 0.5 + Math.min(mark, 40) - dist(o, r) * 0.15;
+    if (sc > bs) { bs = sc; best = o; }
   }
-  return { vx, vy };
+  return best;
 }
 function tryRob(r, chance) { // a dash that reaches the carrier
   const b = state.ball;
@@ -440,17 +514,16 @@ function tryRob(r, chance) { // a dash that reaches the carrier
   if (c.team === r.team || c.role === 'keeper' || dist(r, c) > tune.tackleReach) return;
   r.robbed = true;
   if (c.immune > 0) return;
-  b.lastHolderPrev = c.id;
-  if (rng() < chance) { give(r, 'steal'); c.stun = 0.35; state.shake = 0.15; }
-  else { c.immune = 0.3; if (r.id === 0) { SFX.miss(); msg('빗나갔다', 0.8); } }
+  if (rng() < chance) { give(r, 'steal'); c.stun = 0.35; if (nearCam(r.x)) state.shake = 0.15; }
+  else { c.immune = 0.3; if (r.id === ME) { SFX.miss(); msg('빗나갔다', 0.8); } }
 }
 function goal(side, i) {
   const team = side > 0 ? 0 : 1;
   state.score[team] += tune.goalPoints;
-  state.lantern[String(side)] = 1.4; state.cheer = 1.4; state.shake = 0.3; state.hoopHit = { side, i, t: 1.4 };
+  state.lantern[String(side)] = 1.4; state.cheer = 1.4; state.hoopHit = { side, i, t: 1.4 };
   events.push({ type: 'goal', team, hoop: i, t: state.t });
-  if (team === 0) { state.stats.goals++; SFX.goal(); msg(state.ball.perfect ? '완벽한 골!' : '골! +' + tune.goalPoints, 1.8); if (state.tut <= 2) state.tut = 3; }
-  else { SFX.conceded(); msg('실점…', 1.4); }
+  if (team === 0) { state.stats.goals++; SFX.goal(); msg('그리핀도르 골! +' + tune.goalPoints, 1.8); }
+  else { state.stats.conceded++; state.shake = 0.3; SFX.conceded(); msg('실점…', 1.4); }
   const keeper = RD().find(k => k.role === 'keeper' && k.team !== team);
   give(keeper, 'restart'); keeper.holdT = -tune.resetDelay;
 }
@@ -477,25 +550,27 @@ function updateBall(dt) {
       for (let i = 0; i < 3; i++) if (Math.abs(cy - HOOP_Y[i]) <= tune.hoopHalf) { goal(side, i); return; }
     }
   }
-  if (b.y > FLOOR - 3) { b.y = FLOOR - 3; b.vy = -Math.abs(b.vy) * 0.5; b.vx *= 0.8; b.mode = b.mode === 'pass' ? 'pass' : 'free'; }
+  if (b.y > FLOOR - 3) { b.y = FLOOR - 3; b.vy = -Math.abs(b.vy) * 0.5; b.vx *= 0.8; if (b.mode !== 'pass') b.mode = 'free'; }
   if (b.y < TOP + 2) { b.y = TOP + 2; b.vy = Math.abs(b.vy) * 0.5; }
   if (b.x < 2) { b.x = 2; b.vx = Math.abs(b.vx) * 0.5; b.mode = 'free'; }
   if (b.x > tune.fieldWidth - 2) { b.x = tune.fieldWidth - 2; b.vx = -Math.abs(b.vx) * 0.5; b.mode = 'free'; }
   for (const r of R) {
-    if (r.stun > 0) continue;
+    if (r.stun > 0 || !canHold(r)) continue;
     const d = dist(r, b);
     if (b.mode === 'shot') {
-      if (r.role === 'keeper' && r.team !== b.team && !b.saveTried && d < tune.keeperReach) {
+      if (r.role !== 'keeper' || r.team === b.team) continue;
+      if (r.id === ME) { // your save is yours: get your body, or your dive, in the way
+        if (d < tune.catchRadius + (r.dashT > 0 ? tune.lungeReach : 0)) { give(r, 'save'); return; }
+      } else if (!b.saveTried && d < tune.keeperReach) {
         b.saveTried = true;
-        const ch = r.team === 1 ? lerp(tune.keeperSaveLax, tune.keeperSaveFull, ramp()) : tune.mateKeeperSave;
         const far = b.from > tune.perfectRange;
-        if ((!b.perfect || far) && rng() < ch + (far ? tune.longShotSave : 0)) { give(r, 'save'); return; }
+        if ((!b.perfect || far) && rng() < tune.keeperSave + (far ? tune.longShotSave : 0)) { give(r, 'save'); return; }
       }
       continue;
     }
     if (b.mode === 'pass') {
       if (r.id === b.passTo && d < tune.catchRadius + 2) { give(r, 'pass'); return; }
-      if (r.team !== b.team && r.role === 'flyer' && d < tune.catchRadius - 1 && !b.tried.includes(r.id)) {
+      if (r.team !== b.team && r.role === 'chaser' && d < tune.catchRadius - 1 && !b.tried.includes(r.id)) {
         b.tried.push(r.id);
         const ch = r.team === 1 ? tune.interceptFull * ramp() : 0.3;
         if (rng() < ch) { give(r, 'intercept'); return; }
@@ -506,26 +581,36 @@ function updateBall(dt) {
   }
 }
 
-// ---- Rumblers ---------------------------------------------------------------------------
+// ---- Bludgers and the beaters' bats ---------------------------------------------------------
 function pickTarget(i) {
-  const R = RD(), b = state.ball, me = R[0];
-  if (state.t < tune.laxUntil && i === 0 && me.stun <= 0) return 0; // the first one comes for you, slowly
-  if (b.holder >= 0 && R[b.holder].role !== 'keeper' && rng() < 0.45 + 0.4 * ramp()) return b.holder;
-  const pool = R.filter(r => r.role === 'flyer' && r.stun <= 0);
+  const R = RD(), b = state.ball;
+  if (b.holder >= 0 && rng() < 0.5 + 0.3 * ramp()) return b.holder;
+  const pool = R.filter(r => r.role !== 'beater' && r.stun <= 0);
   return pool[Math.floor(rng() * pool.length)].id;
+}
+/** A beater bats a bludger at the other team: the carrier first, else the nearest rival. */
+function bat(r, rb) {
+  const R = RD(), b = state.ball;
+  let tg = null;
+  if (b.holder >= 0 && R[b.holder].team !== r.team) tg = R[b.holder];
+  else tg = R.filter(o => o.team !== r.team && o.role !== 'beater' && o.stun <= 0).sort((p, q) => dist(p, r) - dist(q, r))[0];
+  if (!tg) return;
+  const lx = tg.x + tg.vx * 0.3 - rb.x, ly = tg.y + tg.vy * 0.3 - rb.y, l = Math.hypot(lx, ly) || 1;
+  rb.vx = lx / l * tune.batSpeed; rb.vy = ly / l * tune.batSpeed; rb.batT = tune.batFlight; rb.batTeam = r.team; rb.rest = 0;
+  r.batCd = tune.batCooldown; r.swing = 0.25; r.face = Math.sign(lx) || r.face;
+  events.push({ type: 'bat', beater: r.id, at: tg.id, t: state.t });
+  if (nearCam(r.x)) SFX.bat();
 }
 function updateRumblers(dt) {
   const R = RD(), b = state.ball;
   const sp = lerp(tune.rumblerSpeedStart, tune.rumblerSpeedEnd, Math.min(1, state.t / tune.rampUntil));
   state.rumblers.forEach((rb, i) => {
     if (!rb.active) {
-      if (state.t >= (i === 0 ? tune.rumblerFirstAt : tune.rumblerSecondAt)) {
-        rb.active = true; rb.x = clamp(R[0].x + (i ? -70 : 70), 10, tune.fieldWidth - 10); rb.y = TOP + 6; rb.px = rb.x; rb.py = rb.y; rb.vy = 20;
-        events.push({ type: 'rumbler', i, t: state.t });
-      }
+      if (state.t >= (i === 0 ? tune.rumblerFirstAt : tune.rumblerSecondAt)) { rb.active = true; rb.vy = 20; events.push({ type: 'rumbler', i, t: state.t }); }
       return;
     }
-    if (rb.rest > 0) { rb.rest -= dt; rb.vy += 60 * dt; }
+    if (rb.batT > 0) rb.batT -= dt; // a batted bludger flies straight
+    else if (rb.rest > 0) { rb.rest -= dt; rb.vy += 60 * dt; }
     else {
       rb.retarget -= dt;
       if (rb.retarget <= 0 || rb.target < 0 || R[rb.target].stun > 0) { rb.target = pickTarget(i); rb.retarget = 2.4; }
@@ -533,34 +618,36 @@ function updateRumblers(dt) {
       let cur = Math.hypot(rb.vx, rb.vy) > 1 ? Math.atan2(rb.vy, rb.vx) : want;
       let d = want - cur; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
       cur += clamp(d, -tune.rumblerTurn * dt, tune.rumblerTurn * dt);
-      rb.vx = Math.cos(cur) * sp; rb.vy = Math.sin(cur) * sp;
+      rb.vx = Math.cos(cur) * sp; rb.vy = Math.sin(cur) * sp; rb.batTeam = -1;
     }
     rb.x += rb.vx * dt; rb.y += rb.vy * dt;
     if (rb.y < TOP + 4) { rb.y = TOP + 4; rb.vy = Math.abs(rb.vy); }
     if (rb.y > FLOOR - 4) { rb.y = FLOOR - 4; rb.vy = -Math.abs(rb.vy) * 0.8; }
     if (rb.x < 4) { rb.x = 4; rb.vx = Math.abs(rb.vx); }
     if (rb.x > tune.fieldWidth - 4) { rb.x = tune.fieldWidth - 4; rb.vx = -Math.abs(rb.vx); }
+    // a beater close enough swings at it
+    for (const r of R) if (r.role === 'beater' && r.stun <= 0 && r.batCd <= 0 && dist(r, rb) < tune.batReach && rb.batTeam !== r.team) { bat(r, rb); break; }
     if (rb.rest > 0) return;
     for (const r of R) {
-      if (r.stun > 0 || r.role === 'keeper' || dist(r, rb) > tune.rumblerHit) continue;
-      r.stun = tune.stunTime; if (r.team === 0 && r.id === 0) state.stats.hits++;
+      if (r.stun > 0 || r.role === 'beater' || r.team === rb.batTeam || dist(r, rb) > tune.rumblerHit) continue;
+      r.stun = tune.stunTime; if (r.id === ME) state.stats.hits++;
       events.push({ type: 'hit', rider: r.id, t: state.t });
-      if (Math.abs(r.x - R[0].x) < 100) { SFX.thud(); state.shake = Math.max(state.shake, 0.15); }
-      if (b.holder === r.id) { release(r); b.mode = 'free'; b.vx = (rng() - 0.5) * 60; b.vy = -40 - rng() * 20; if (r.team === 1) msg('상대가 공을 놓쳤다!', 1.2); }
-      if (r.id === 0) { msg('블러저에 맞았다!', 1.2); state.charging = false; }
-      rb.vx = -rb.vx * 0.6; rb.vy = -50; rb.rest = tune.rumblerRest; rb.target = -1;
+      if (nearCam(r.x)) { SFX.thud(); state.shake = Math.max(state.shake, 0.15); }
+      if (b.holder === r.id) { release(r); b.mode = 'free'; b.vx = (rng() - 0.5) * 60; b.vy = -40 - rng() * 20; if (nearCam(r.x)) msg(r.team === 1 ? '슬리데린이 퀘이플을 놓쳤다!' : '퀘이플을 놓쳤다!', 1.2); }
+      if (r.id === ME) { msg('블러저에 맞았다!', 1.2); state.charging = false; }
+      rb.vx = -rb.vx * 0.6; rb.vy = -50; rb.rest = tune.rumblerRest; rb.target = -1; rb.batT = 0; rb.batTeam = -1;
       break;
     }
   });
 }
 
-// ---- The glimmer --------------------------------------------------------------------------
+// ---- The golden snitch -----------------------------------------------------------------------
 function updateGlimmer(dt) {
-  const g = state.glimmer, R = RD();
+  const g = state.glimmer, R = RD(), seekers = R.filter(r => r.role === 'seeker');
   if (!g.active) {
     if (state.t >= tune.glimmerAt) {
-      let gx = 0, best = -1; // appear where no flyer is close
-      for (let k = 0; k < 8; k++) { const x = 20 + rng() * (tune.fieldWidth - 40), d = Math.min(...R.filter(r => r.role === 'flyer').map(r => Math.abs(r.x - x))); if (d > best) { best = d; gx = x; } }
+      let gx = 0, best = -1; // appear where no seeker is close
+      for (let k = 0; k < 8; k++) { const x = 20 + rng() * (tune.fieldWidth - 40), d = Math.min(...seekers.map(r => Math.abs(r.x - x))); if (d > best) { best = d; gx = x; } }
       g.active = true; g.x = gx; g.y = TOP + 14; g.px = g.x; g.py = g.y; g.turnT = 0;
       state.glimmerNote = 3.5; SFX.bell(); msg('골든 스니치 등장!', 2); events.push({ type: 'glimmer', t: state.t });
     }
@@ -572,10 +659,9 @@ function updateGlimmer(dt) {
     if (g.y < TOP + 12) g.wy = Math.abs(g.wy); if (g.y > FLOOR - 16) g.wy = -Math.abs(g.wy);
     g.turnT = tune.glimmerTurnEvery * (0.5 + rng());
   }
-  for (const r of R) {
-    if (r.role !== 'flyer') continue;
+  for (const r of seekers) {
     const d = dist(r, g);
-    if (d < tune.glimmerCatch && r.stun <= 0 && (r.id === 0 || r.team === 1)) { catchGlimmer(r); return; }
+    if (d < tune.glimmerCatch && r.stun <= 0 && state.t >= tune.glimmerAt + tune.snitchHide) { catchGlimmer(r); return; }
     if (d < tune.glimmerFlee && g.dartT <= 0) {
       const ax = g.x - r.x, ay = g.y - r.y, l = Math.hypot(ax, ay) || 1, s = rng() < 0.5 ? -1 : 1;
       g.wx = ax / l + (-ay / l) * s * 0.8; g.wy = ay / l + (ax / l) * s * 0.8;
@@ -599,7 +685,7 @@ function finish(reason) {
   const [a, b] = state.score;
   state.over = true; state.endReason = reason; state.winner = a > b ? 0 : b > a ? 1 : -1;
   const head = state.winner === 0 ? '승리!' : state.winner === 1 ? '패배' : '무승부';
-  const how = reason === 'mine' ? '우리가 골든 스니치를 잡았다' : reason === 'theirs' ? '상대가 골든 스니치를 잡았다' : '시간 종료';
+  const how = reason === 'mine' ? '그리핀도르 수색꾼이 스니치를 잡았다' : reason === 'theirs' ? '슬리데린 수색꾼이 스니치를 잡았다' : '시간 종료';
   state.gained = head + ' ' + how; state.resultsT = 0;
   events.push({ type: 'end', winner: state.winner, reason, score: [a, b], t: state.t });
   if (state.winner === 0) SFX.win(); else SFX.lose();
@@ -607,67 +693,75 @@ function finish(reason) {
 }
 
 // ---- AI --------------------------------------------------------------------------------------
-function aiFlyer(r, dt) {
-  const b = state.ball, R = RD(), side = r.team === 0 ? 1 : -1, m = speedMult(r), g = state.glimmer;
-  const mate = R.find(o => o.team === r.team && o.role === 'flyer' && o !== r);
-  const foes = R.filter(o => o.team !== r.team && o.role === 'flyer');
-  let tgt = null;
-  if (b.holder === r.id) { // carry it in and shoot
+function aiChaser(r, dt) {
+  const b = state.ball, R = RD(), side = attackSide(r.team), m = speedMult(r), fw = tune.fieldWidth;
+  const mates = R.filter(o => o.team === r.team && o.role === 'chaser' && o !== r);
+  const foes = R.filter(o => o.team !== r.team && o.role === 'chaser');
+  const lane = MID - 30 + r.slot * 30;
+  let tgt;
+  if (b.holder === r.id) { // carry it in, pass when pressed, shoot in range
     r.holdT += dt;
     const keeper = R.find(o => o.role === 'keeper' && o.team !== r.team), gx = hoopX(side);
     let hy = HOOP_Y[0]; for (const y of HOOP_Y) if (Math.abs(y - keeper.y) > Math.abs(hy - keeper.y)) hy = y;
-    if (r.team === 0) { // your teammate sets you up: back to you, and shoots only when you are far or it waited long
-      const youFar = mate.stun > 0 || dist(mate, r) > 120;
-      if (r.holdT > tune.mateReturnPass && !youFar) { pass(r, mate); return; }
-      if (!youFar && r.holdT < 3) { tgt = { x: clamp(r.x + side * 30, 20, tune.fieldWidth - 20), y: r.y < MID ? r.y + 10 : r.y - 10 }; const inp = steerInput(r, tgt.x, tgt.y); fly(r, inp.ix, inp.iy, dt, m * 0.8); return; }
-    }
     const pressed = foes.some(o => dist(o, r) < 16);
-    if (r.team === 1 && pressed && r.holdT > 0.6 && mate.stun <= 0 && (mate.x - r.x) * side > 10) { pass(r, mate); return; }
-    if (Math.abs(gx - r.x) < tune.aiShootRange && r.face === side) {
-      const e = r.team === 0 ? tune.mateAimError : tune.aiAimError, sp = lerp(tune.shotMin, tune.shotMax, 0.4 + rng() * 0.6);
-      const tt = Math.abs(gx - r.x) / sp; shoot(r, side * sp, (hy + (rng() - 0.5) * 2 * e - r.y) / tt, false); return;
+    const ahead = mates.filter(o => o.stun <= 0 && (o.x - r.x) * side > 8).sort((p, q) => (q.x - p.x) * side - (p.x - q.x) * 0)[0];
+    if (((pressed && r.holdT > 0.5) || r.holdT > 3.5) && ahead) { pass(r, ahead); return; }
+    if (Math.abs(gx - r.x) < tune.aiShootRange && r.face === side && r.holdT > 0.35) {
+      const e = r.team === 0 ? tune.mateAimError : lerp(tune.aiAimError * 1.4, tune.aiAimError, ramp());
+      const sp = lerp(tune.shotMin, tune.shotMax, 0.35 + rng() * 0.65), tt = Math.abs(gx - r.x) / sp;
+      shoot(r, side * sp, (hy + (rng() - 0.5) * 2 * e - r.y) / tt, false); return;
     }
-    tgt = { x: gx - side * (tune.aiShootRange - 20), y: hy };
-  } else if (g.active && seekerOf(r.team) === r) { // chase where it was a moment ago
-    r.aiT -= dt; if (r.aiT <= 0) { r.sx = g.x; r.sy = g.y; r.aiT = tune.seekerLag; }
-    tgt = { x: r.sx, y: r.sy };
-    const inp = steerInput(r, tgt.x, tgt.y); fly(r, inp.ix, inp.iy, dt, m * (r.team === 1 ? tune.rivalSeekerSpeed : 0.85)); return;
+    tgt = { x: gx - side * (tune.aiShootRange - 22), y: lerp(lane, hy, 0.5) };
   } else {
     const carrier = b.holder >= 0 ? R[b.holder] : null;
     if (b.mode === 'pass' && b.passTo === r.id) tgt = { x: b.x, y: b.y };
-    else if (carrier && carrier.team === r.team) tgt = { x: clamp(carrier.x + side * 40, 20, tune.fieldWidth - 20), y: carrier.y < MID ? carrier.y + 24 : carrier.y - 24 };
+    else if (carrier && carrier.team === r.team) tgt = { x: clamp(carrier.x + side * (34 + r.slot * 12), 20, fw - 20), y: lane };
     else if (carrier && carrier.role !== 'keeper') {
-      const chaser = r.team === 0 ? r : [r, mate].sort((p, q) => dist(p, carrier) - dist(q, carrier))[0];
+      const chaser = [r, ...mates].sort((p, q) => dist(p, carrier) - dist(q, carrier))[0];
       if (chaser === r) {
         tgt = { x: carrier.x + carrier.vx * 0.3, y: carrier.y + carrier.vy * 0.3 };
         if (dist(r, carrier) < 26 && r.dashCd <= 0 && rng() < 0.08) startDash(r, carrier.x - r.x, carrier.y - r.y);
-      } else tgt = { x: lerp(hoopX(-side), carrier.x, 0.5), y: carrier.y };
-    } else if (carrier) tgt = { x: tune.fieldWidth / 2 - side * 20, y: r.id % 2 ? MID - 26 : MID + 22 };
+      } else tgt = { x: lerp(hoopX(-side), carrier.x, 0.45 + r.slot * 0.12), y: lane };
+    } else if (carrier) tgt = { x: fw / 2 + (carrier.team === r.team ? side * 30 : -side * 30), y: lane }; // a keeper holds it: spread out
     else {
-      const near = r.team === 0 ? r : [r, mate].sort((p, q) => dist(p, b) - dist(q, b))[0];
-      tgt = near === r ? { x: b.x, y: b.y } : { x: lerp(b.x, tune.fieldWidth / 2, 0.5), y: r.id % 2 ? MID - 26 : MID + 22 };
+      const near = [r, ...mates].sort((p, q) => dist(p, b) - dist(q, b))[0];
+      tgt = near === r ? { x: b.x, y: b.y } : { x: lerp(b.x, fw / 2, 0.4), y: lane };
     }
   }
   const inp = steerInput(r, tgt.x, tgt.y); fly(r, inp.ix, inp.iy, dt, m);
   if (r.dashT > 0) tryRob(r, r.team === 1 ? lerp(tune.aiStealLax, tune.aiStealFull, ramp()) : 0.5);
 }
-/** Which flyer of a team chases the glimmer: never you; a rival only once the loose start is over. */
-function seekerOf(team) {
-  const R = RD(), b = state.ball;
-  if (team === 0) return null; // the glimmer is yours to catch
-  if (state.t < tune.laxUntil || state.t < tune.glimmerAt + tune.glimmerHeadStart) return null; // you get a head start
-  const fl = R.filter(r => r.team === 1 && r.role === 'flyer' && r.id !== b.holder);
-  return fl.sort((p, q) => dist(q, b) - dist(p, b))[0] || null;
+function aiBeater(r, dt) { // stay near a bludger, between it and your own side
+  const R = RD(), m = speedMult(r);
+  const rbs = state.rumblers.filter(x => x.active);
+  let tgt;
+  if (rbs.length) {
+    const rb = rbs.sort((p, q) => dist(p, r) - dist(q, r))[r.slot % rbs.length] || rbs[0];
+    const mates = R.filter(o => o.team === r.team && o.role !== 'beater');
+    const cx = mates.reduce((s, o) => s + o.x, 0) / mates.length, cy = mates.reduce((s, o) => s + o.y, 0) / mates.length;
+    const dx = cx - rb.x, dy = cy - rb.y, l = Math.hypot(dx, dy) || 1;
+    tgt = { x: rb.x + dx / l * 6, y: rb.y + dy / l * 6 };
+  } else tgt = { x: tune.fieldWidth / 2 - attackSide(r.team) * 40, y: r.slot ? MID + 30 : MID - 34 };
+  const inp = steerInput(r, tgt.x, tgt.y); fly(r, inp.ix, inp.iy, dt, m);
 }
-function aiKeeper(r, dt) {
+function aiSeeker(r, dt) {
+  const g = state.glimmer, m = speedMult(r);
+  if (!g.active || state.t < tune.glimmerAt + tune.snitchHide) { // circle high, searching
+    const a = state.t * 0.6 + r.team * Math.PI;
+    const inp = steerInput(r, tune.fieldWidth / 2 + Math.cos(a) * 70, TOP + 18 + Math.sin(a) * 8); fly(r, inp.ix, inp.iy, dt, m * 0.7); return;
+  }
+  r.aiT -= dt; if (r.aiT <= 0) { r.sx = g.x; r.sy = g.y; r.aiT = tune.seekerLag; } // a late look: darts shake it off
+  const inp = steerInput(r, r.sx, r.sy); fly(r, inp.ix, inp.iy, dt, m * (r.team === 1 ? tune.rivalSeekerSpeed : tune.mateSeekerSpeed));
+}
+function aiKeeper(r, dt) { // the rival keeper: track the quaffle across the hoops, throw it out
   const b = state.ball, side = r.team === 0 ? -1 : 1, gx = hoopX(side) - side * 10;
   r.stun = Math.max(0, r.stun - dt); r.immune = Math.max(0, r.immune - dt);
   let ty = clamp(b.y, HOOP_Y[0] - 4, HOOP_Y[2] + 4), sp = tune.keeperSpeed;
   if (b.holder === r.id) {
     r.holdT += dt; r.immune = 1; ty = MID;
     if (r.holdT > 0.8) {
-      const mates = RD().filter(o => o.team === r.team && o.role === 'flyer' && o.stun <= 0);
-      const to = r.team === 0 ? (mates.find(o => o.id === 0) || mates[0]) : mates.sort((p, q) => (q.x - p.x) * -side)[0];
+      const mates = RD().filter(o => o.team === r.team && o.role === 'chaser' && o.stun <= 0);
+      const to = mates.sort((p, q) => (q.x - p.x) * -side)[0];
       if (to) pass(r, to);
     }
   } else if (b.mode === 'shot' && b.team !== r.team && Math.abs(b.x - r.x) < 60) sp *= 1.8;
@@ -676,7 +770,7 @@ function aiKeeper(r, dt) {
   r.x += r.vx * dt; r.y += r.vy * dt; r.face = -side;
 }
 
-// ---- You -------------------------------------------------------------------------------------
+// ---- You: 그리핀도르's keeper ----------------------------------------------------------------
 function readInput() {
   let ix = 0, iy = 0;
   if (down.has('ArrowLeft') || down.has('KeyA')) ix -= 1;
@@ -690,47 +784,52 @@ function playerAct(me, inp, dt) {
   const b = state.ball, has = b.holder === me.id;
   const pressedNow = inp.a && !state.actPrev, releasedNow = !inp.a && state.actPrev;
   state.actPrev = inp.a; state.buffer = Math.max(0, state.buffer - dt);
-  if (inp.bHit) startDash(me, inp.ix, inp.iy);
+  if (inp.bHit && !has && startDash(me, inp.ix, inp.iy) && state.tut === 1) state.tut = 2;
   if (has) {
     if (pressedNow) { state.charging = true; state.holdT = 0; }
     if (state.charging && inp.a) state.holdT += dt;
     if (state.charging && releasedNow) {
       state.charging = false;
-      const mate = RD()[1];
-      if (state.holdT < tune.tapTime && mate.stun <= 0) { pass(me, mate); if (state.tut === 1) state.tut = 2; }
-      else {
-        const c = clamp(state.holdT / tune.chargeTime, 0, 1), perfect = c >= tune.sweetFrom && c <= tune.sweetTo;
-        const sp = lerp(tune.shotMin, tune.shotMax, c) * (perfect ? 1.15 : 1), v = aimedShot(me, inp.iy, sp);
-        shoot(me, v.vx, v.vy, perfect);
-        if (perfect) { SFX.perfect(); msg('완벽한 슛!', 1); state.stats.perfect++; }
-        if (state.tut === 2) state.tut = 3;
+      const to = passTarget(me);
+      if (state.holdT < tune.tapTime && to) { pass(me, to); if (state.tut <= 2) state.tut = 3; }
+      else { // a long throw where the stick points (or straight ahead)
+        const c = clamp(state.holdT / tune.chargeTime, 0, 1), sp = lerp(tune.shotMin, tune.shotMax, c);
+        let dx = inp.ix, dy = inp.iy; if (!dx && !dy) dx = me.face;
+        const l = Math.hypot(dx, dy); shoot(me, dx / l * sp, dy / l * sp, false); state.ball.mode = 'free';
+        if (state.tut <= 3) state.tut = 4;
       }
     }
   } else {
     state.charging = false;
-    if (pressedNow) { if (!startDash(me, inp.ix, inp.iy)) state.buffer = 0.25; else state.buffer = 0.25; }
+    if (pressedNow) { startDash(me, inp.ix, inp.iy); state.buffer = 0.25; }
   }
   if (me.dashT > 0) tryRob(me, tune.playerSteal);
 }
 
 // ---- The step --------------------------------------------------------------------------------
 function updateMatch(dt) {
-  const R = RD(), me = R[0];
+  const R = RD(), me = R[ME];
   state.t += dt;
   for (const e of [...R, state.ball, ...state.rumblers, state.glimmer]) { e.px = e.x; e.py = e.y; }
   state.camPX = state.camX;
   const inp = readInput();
   fly(me, inp.ix, inp.iy, dt, speedMult(me));
   playerAct(me, inp, dt);
-  for (const r of R) { if (r === me) continue; if (r.role === 'keeper') aiKeeper(r, dt); else aiFlyer(r, dt); }
+  for (const r of R) {
+    if (r === me) continue;
+    if (r.role === 'keeper') aiKeeper(r, dt);
+    else if (r.role === 'chaser') aiChaser(r, dt);
+    else if (r.role === 'beater') aiBeater(r, dt);
+    else aiSeeker(r, dt);
+  }
   updateBall(dt);
   updateRumblers(dt);
   if (!state.over) updateGlimmer(dt);
-  // teach by doing
   if (state.tut === 0 && (inp.ix || inp.iy)) { state.tutMoved += dt; if (state.tutMoved > 0.8) state.tut = 1; }
-  // camera: you, a little ahead of where you face; never between pixels
-  const want = clamp(me.x - W / 2 + me.face * 18, 0, tune.fieldWidth - W);
-  state.camX = lerp(state.camX, want, Math.min(1, 5 * dt));
+  // camera: you stay on screen, and it leans toward the quaffle
+  const b = state.ball, focus = me.x + clamp(b.x - me.x, -90, 90) * 0.6;
+  const want = clamp(focus - W / 2, 0, tune.fieldWidth - W);
+  state.camX = lerp(state.camX, want, Math.min(1, 4 * dt));
   state.shake = Math.max(0, state.shake - dt); state.cheer = Math.max(0, state.cheer - dt);
   for (const k in state.lantern) state.lantern[k] = Math.max(0, state.lantern[k] - dt);
   if (state.hoopHit) { state.hoopHit.t -= dt; if (state.hoopHit.t <= 0) state.hoopHit = null; }
@@ -738,7 +837,6 @@ function updateMatch(dt) {
   state.msgs.forEach(m => m.t -= dt); state.msgs = state.msgs.filter(m => m.t > 0);
   if (!state.over && state.t >= tune.matchTime) finish('time');
 }
-
 
 // ---- Drawing ---------------------------------------------------------------------------------
 function dither(x, y, w, h, c, every = 2) { // a checker of one colour, the pixel way to blend
@@ -811,7 +909,13 @@ function drawWorld(cam, tNow) {
   }
 }
 function ip(e, a) { return { x: lerp(e.px, e.x, a), y: lerp(e.py, e.y, a) }; }
-const SPR_OF = r => r.role === 'keeper' ? (r.team === 0 ? 'usKeeper' : 'rivalKeeper') : (r.team === 0 ? 'usFlyer' : 'rivalFlyer');
+const SPR_OF = r => {
+  const t = r.team === 0 ? 'us' : 'rival';
+  if (r.role === 'keeper') return t + 'Keeper';
+  if (r.role === 'beater') return t + (r.swing > 0 ? 'BeaterSwing' : 'Beater');
+  if (r.role === 'seeker') return t + 'Seeker';
+  return t + 'Flyer';
+};
 function drawPlay(a) {
   const tNow = clock.now();
   shakeX = state.shake > 0 ? Math.round(Math.sin(tNow * 60) * tune.shake) : 0;
@@ -858,24 +962,22 @@ function drawHUD() {
   }
   if (trailing(0) && Math.floor(st.t * 3) % 2 === 0) { rect(W / 2 - 22, 3, 1, 7, 'y'); rect(W / 2 - 23, 4, 3, 1, 'y'); rect(W / 2 - 24, 5, 5, 1, 'y'); } // the catch-up arrow
   const me = st.riders[0];
-  if (st.charging) { // the charge meter with its perfect window
+  if (st.charging) { // the throw meter: a tap passes, holding throws further
     const c = clamp(st.holdT / tune.chargeTime, 0, 1), x0 = W / 2 - 40, y0 = FLOOR - 18;
-    rect(x0 - 2, y0 - 2, 84, 9, '3'); rect(x0, y0, 80, 5, '#3b2f5c');
-    rect(x0 + Math.round(80 * tune.sweetFrom), y0, Math.round(80 * (tune.sweetTo - tune.sweetFrom)), 5, 'y');
-    rect(x0, y0 + 1, Math.round(80 * c), 3, c >= tune.sweetFrom && c <= tune.sweetTo ? 'w' : 'o');
-    const perfect = c >= tune.sweetFrom && c <= tune.sweetTo;
-    text(st.holdT < tune.tapTime ? '떼면 패스' : perfect ? '지금 떼면 완벽!' : '슛 충전 중', W / 2, y0 - 9, 9, perfect ? 'y' : 0, 'center');
+    rect(x0 - 2, y0 - 2, 84, 9, '3'); rect(x0, y0, 80, 5, '#3b2f5c'); rect(x0, y0 + 1, Math.round(80 * c), 3, c >= 1 ? 'y' : 'o');
+    text(st.holdT < tune.tapTime ? '떼면 패스' : '떼면 멀리 던지기', W / 2, y0 - 9, 9, 0, 'center');
   }
   if (me.stun > 0) text('휘청!', W / 2, FLOOR - 34, 10, 'f', 'center');
   for (const m of st.msgs) text(m.s, W / 2, 46, 16, 'y', 'center');
   const T = touchMode;
-  const tips = [T ? '십자키로 날아 보세요' : '방향키로 날아 보세요', T ? 'A를 짧게: 동료에게 패스' : 'Z를 짧게: 동료에게 패스',
-    T ? 'A를 길게 눌렀다 떼면 슛' : 'Z를 길게 눌렀다 떼면 슛', T ? 'B: 돌진해서 공 빼앗기' : 'X: 돌진해서 공 빼앗기'];
-  if (st.tut === 3 && me.dashT > 0) st.tut = 4;
-  if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut === 3 && st.t > 25)) {
+  const tips = [T ? '당신은 파수꾼! 십자키로 골대를 지켜요' : '당신은 파수꾼! 방향키로 골대를 지켜요',
+    T ? '슛이 오면 몸으로 막아요 · B: 몸 날리기' : '슛이 오면 몸으로 막아요 · X: 몸 날리기',
+    T ? '퀘이플을 잡으면 A 짧게: 추격꾼에게 패스' : '퀘이플을 잡으면 Z 짧게: 추격꾼에게 패스',
+    T ? 'A 길게 눌렀다 떼면 멀리 던지기' : 'Z 길게 눌렀다 떼면 멀리 던지기'];
+    if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut === 0 && st.t > 12)) {
     rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text(tips[st.tut], W / 2, 21.5, 8, 0, 'center');
   }
-  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('골든 스니치를 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
+  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('수색꾼이 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
 }
 const TEAMS_SHORT = ['그리핀도르', '슬리데린'];
 function panel(x, y, w, h) { rect(x, y, w, h, '3'); rect(x + 1, y + 1, w - 2, h - 2, '0'); rect(x + 2, y + 2, w - 4, h - 4, '3'); rect(x + 3, y + 3, w - 6, h - 6, '#2a2045'); }
@@ -901,12 +1003,13 @@ const scenes = {
     update(dt) { state.t += dt; },
     draw() {
       clear('#8cc8f2'); rect(0, 0, W, 16, '3'); text('퀴디치 포켓의 선수와 공', W / 2, 8, 9, 'y', 'center', -1);
-      const items = [['usFlyer', '그리핀도르', '추격꾼'], ['usKeeper', '그리핀도르', '파수꾼'], ['volla', '퀘이플', ''],
-        ['rivalFlyer', '슬리데린', '추격꾼'], ['rivalKeeper', '슬리데린', '파수꾼'], ['rumbler', '블러저', ''], ['glimmerA', '골든 스니치', '']];
+      const items = [['usKeeper', '그리핀도르', '파수꾼'], ['usFlyer', '그리핀도르', '추격꾼'], ['usBeater', '그리핀도르', '몰이꾼'], ['usSeeker', '그리핀도르', '수색꾼'],
+        ['rivalKeeper', '슬리데린', '파수꾼'], ['rivalFlyer', '슬리데린', '추격꾼'], ['rivalBeater', '슬리데린', '몰이꾼'], ['rivalSeeker', '슬리데린', '수색꾼'],
+        ['volla', '퀘이플', ''], ['rumbler', '블러저', ''], ['glimmerA', '골든 스니치', ''], ['usBeaterSwing', '몰이꾼', '방망이질']];
       items.forEach(([s, n1, n2], i) => {
-        const colN = i % 3, row = Math.floor(i / 3), x = 36 + colN * 68, y = 38 + row * 44;
-        const c = sprite(s, false); ctx.drawImage(c, 0, 0, c.width, c.height, Math.round(x - c.width), Math.round(y - c.height), c.width * 2, c.height * 2);
-        text(n1, x, y + 18, 8, 0, 'center'); if (n2) text(n2, x, y + 27, 8, 'y', 'center');
+        const colN = i % 4, row = Math.floor(i / 4), x = 28 + colN * 51, y = 36 + row * 43;
+        const c = sprite(s, false); ctx.drawImage(c, 0, 0, c.width, c.height, Math.round(x - c.width * 0.75), Math.round(y - c.height * 0.75), Math.round(c.width * 1.5), Math.round(c.height * 1.5));
+        text(n1, x, y + 15, 7, 0, 'center'); if (n2) text(n2, x, y + 23, 7, 'y', 'center');
       });
     },
   },
@@ -944,8 +1047,8 @@ const scenes = {
       text(st.gained.replace(/^\S+\s/, ''), W / 2, 60, 9, 0, 'center', -1);
       drawSpr('hawk', W / 2 - 50, 80); drawSpr('crow', W / 2 + 50, 80, true);
       digits(st.score[0], W / 2 - 8, 74, 'y', 3, 'right'); digits(st.score[1], W / 2 + 8, 74, '#9fe0b0', 3, 'left'); rect(W / 2 - 1, 78, 2, 2, '0'); rect(W / 2 - 1, 84, 2, 2, '0');
-      text(`골 ${st.stats.goals} · 완벽한 슛 ${st.stats.perfect}`, W / 2, 101, 8, 0, 'center', -1);
-      text(`빼앗기 ${st.stats.steals} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
+      text(`선방 ${st.stats.saves} · 실점 ${st.stats.conceded}`, W / 2, 101, 8, 0, 'center', -1);
+      text(`패스 ${st.stats.passes} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
       if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? '눌러서 다시 하기' : 'Enter를 눌러 다시 하기', W / 2, 130, 10, 'w', 'center');
     },
   },
@@ -967,7 +1070,7 @@ function tick() {
 function drawFrame() {
   hudClear(); shakeX = 0;
   scenes[scene].draw();
-  const mb = document.getElementById('lMute'); if (mb) mb.textContent = muted ? '소리 끔' : '소리';
+  const mb = document.getElementById('hMute'); if (mb) mb.textContent = muted ? '소리 켜기' : '소리 끄기';
 }
 function frame() { tick(); requestAnimationFrame(frame); }
 // A headless browser on a time budget runs timers but almost no animation frames: a timer
