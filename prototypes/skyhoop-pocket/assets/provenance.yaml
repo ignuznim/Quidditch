@@ -9,3 +9,18 @@
 #   date: 2026-01-31
 #   ships: true               # false for a file only the build uses
 #   placeholder: true         # until it is replaced; leave the line out otherwise
+- path: assets/icon-180.png
+  origin: code
+  tool: "a canvas script run in a headless browser, drawn on a 64-pixel grid"
+  date: 2026-11-22
+  ships: true
+- path: assets/icon-192.png
+  origin: code
+  tool: "a canvas script run in a headless browser, drawn on a 64-pixel grid"
+  date: 2026-11-22
+  ships: true
+- path: assets/icon-512.png
+  origin: code
+  tool: "a canvas script run in a headless browser, drawn on a 64-pixel grid"
+  date: 2026-11-22
+  ships: true

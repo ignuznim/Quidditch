@@ -8,7 +8,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>퀴디치 포켓</title>
+<title>포켓보이</title>
+<meta name="apple-mobile-web-app-title" content="포켓보이">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#c9c8c2">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; background: #1b1a22;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none;
@@ -72,7 +78,7 @@
     <div class="led"></div><div class="ledlabel">POWER</div>
     <div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
   </div>
-  <div class="brand" id="brand"><span class="small">Quidditch</span> <span class="big">POCKET</span></div>
+  <div class="brand" id="brand"><span class="small">Pixel</span> <span class="big">POCKET BOY</span></div>
   <div id="pad">
     <div class="dpad" id="dpad"><div class="cross"></div><div class="dimple"></div>
       <div class="ar" id="arU"></div><div class="ar" id="arD"></div><div class="ar" id="arL"></div><div class="ar" id="arR"></div></div>
@@ -132,19 +138,31 @@ let touchMode = params.get('touch') === '1' || matchMedia('(pointer: coarse)').m
 let hudScale = 1, shakeX = 0;
 const deviceEl = document.getElementById('device'), bezelEl = document.getElementById('bezel');
 const place = (el, x, y, w, h) => { el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px'; if (w != null) el.style.width = Math.round(w) + 'px'; if (h != null) el.style.height = Math.round(h) + 'px'; };
+const saProbe = document.createElement('div');
+saProbe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+document.body.appendChild(saProbe);
+function safeArea() { const c = getComputedStyle(saProbe); return { t: parseFloat(c.paddingTop) || 0, b: parseFloat(c.paddingBottom) || 0 }; }
 /** Lays out the handheld from the proportions of the real one (width 90 : height 148), at any window size. */
 function fit() {
   const iw = innerWidth, ih = innerHeight, dpr = devicePixelRatio || 1;
-  const Dw = Math.min(iw, ih * 0.608, 560), Dh = Math.min(ih, Dw / 0.608);
+  // A phone held upright, or the app opened from the home screen: the body fills the whole screen,
+  // clear of the notch and the home bar. Elsewhere it keeps the real one's 90 : 148 shape.
+  const app = navigator.standalone === true || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
+  const full = app || (ih > iw && iw <= 700);
+  const sa = full ? safeArea() : { t: 0, b: 0 };
+  const Dw = full ? iw : Math.min(iw, ih * 0.608, 560), Dh = full ? ih : Math.min(ih, Dw / 0.608);
   const u = Dw / 100; // one per cent of the body's width
   place(deviceEl, (iw - Dw) / 2, (ih - Dh) / 2, Dw, Dh);
-  deviceEl.style.borderRadius = `${u * 2.5}px ${u * 2.5}px ${u * 22}px ${u * 2.5}px`;
+  deviceEl.style.borderRadius = full ? `0 0 ${u * 22}px 0` : `${u * 2.5}px ${u * 2.5}px ${u * 22}px ${u * 2.5}px`;
+  document.body.style.background = full ? '#c9c8c2' : '';
+  const T = sa.t, extra = Math.max(0, Dh - sa.b - T - u * 164.5); // height the real proportions leave over
   // the top: a groove across, two short ones down, the OFF-ON mark
-  place(document.getElementById('groove'), 0, u * 5.2, Dw); place(document.getElementById('grooveL'), u * 8.5, 0, null, u * 5.2); place(document.getElementById('grooveR'), Dw - u * 8.5, 0, null, u * 5.2);
-  const offon = document.getElementById('offon'); place(offon, u * 12, u * 1.2); offon.style.fontSize = u * 2.6 + 'px';
-  // the bezel, from 8.5% to 91.5% of the width, its lower-right corner swept round
-  const bx = u * 8.5, by = u * 9.5, bw = u * 83;
-  const sw = u * 60, k0 = sw / W; // the screen: 60% of the body's width
+  place(document.getElementById('groove'), 0, T + u * 5.2, Dw); place(document.getElementById('grooveL'), u * 8.5, T, null, u * 5.2); place(document.getElementById('grooveR'), Dw - u * 8.5, T, null, u * 5.2);
+  const offon = document.getElementById('offon'); place(offon, u * 12, T + u * 1.2); offon.style.fontSize = u * 2.6 + 'px';
+  // the bezel, from 8.5% to 91.5% of the width, its lower-right corner swept round; a tall phone gets a bigger screen
+  const sw = u * 60 + Math.min(extra * 0.45, u * 16);
+  const bw = Math.min(sw + u * 23, u * 96), bx = (Dw - bw) / 2, by = T + u * 9.5;
+  const k0 = sw / W; // the screen: 60% of the body's width, more on a tall phone
   let s = k0 * dpr >= 3 ? k0 : Math.max(1, Math.floor(k0 * dpr)) / dpr;
   if (s < k0 * 0.8) s = k0; // a whole-pixel scale that would leave the screen much smaller: fill it instead
   const cw = Math.round(W * s), ch = Math.round(H * s);
@@ -153,6 +171,7 @@ function fit() {
   place(document.getElementById('s1'), u * 3, u * 4, bw - u * 6, Math.max(1, u * 0.55)); place(document.getElementById('s2'), u * 3, u * 5.4, bw - u * 6, Math.max(1, u * 0.55));
   const st = document.getElementById('stext'); place(st, bw / 2, u * 5.05); st.style.fontSize = u * 2.15 + 'px'; st.style.padding = `0 ${u * 1.5}px`;
   const scrX = (bw - cw) / 2 + u * 2.5, scrY = u * 9;
+  const bb = by + bh, shift = Math.max(0, Dh - sa.b - bb - u * 92) * 0.5; // the controls sit in the middle of what is left
   place(screenEl, scrX, scrY, cw, ch);
   const led = bezelEl.querySelector('.led'); place(led, u * 5.3, scrY + ch * 0.3, u * 2.2, u * 2.2);
   const ll = bezelEl.querySelector('.ledlabel'); place(ll, u * 6.4, scrY + ch * 0.3 + u * 3.4); ll.style.fontSize = u * 1.8 + 'px';
@@ -165,7 +184,7 @@ function fit() {
   hudCanvas.width = Math.round(W * hudScale); hudCanvas.height = Math.round(H * hudScale);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
   // the controls, at the real one's positions (in % of width; the body is 164.5 units tall)
-  const at = (x, y) => [x * u, y * u];
+  const at = (x, y) => [x * u, (y - 72.5) * u + bb + shift]; // the real one's positions, below its bezel
   const ds = u * 23, [dx, dy] = at(22.5, 109);
   place(dpad, dx - ds / 2, dy - ds / 2, ds, ds);
   const tri = (id, dir) => { const e = document.getElementById(id), a = u * 1.6, c = '#4a4b55'; e.style.borderWidth = a + 'px';
@@ -182,15 +201,16 @@ function fit() {
   lab('lA', ax + u * 3.5, ay + aS / 2 + u * 3.6, u * 3.2, 0); lab('lB', bx2 + u * 3.5, by2 + aS / 2 + u * 3.6, u * 3.2, 0);
   // SELECT and START: slanted rubber keys, their names printed below on the same slant
   const pw = u * 12, ph = u * 3.6, rot = -25;
-  for (const [id, lid, x, y] of [['bMute', 'lMute', 37, 135], ['bStart', 'lStart', 54, 135]]) {
-    const e = document.getElementById(id); place(e, x * u - pw / 2, y * u - ph / 2, pw, ph); e.style.transform = `rotate(${rot}deg)`;
-    lab(lid, x * u - u * 1.8, y * u + u * 6, u * 2.6, rot);
+  for (const [id, lid, x0, y0] of [['bMute', 'lMute', 37, 135], ['bStart', 'lStart', 54, 135]]) {
+    const [x, y] = at(x0, y0);
+    const e = document.getElementById(id); place(e, x - pw / 2, y - ph / 2, pw, ph); e.style.transform = `rotate(${rot}deg)`;
+    lab(lid, x - u * 1.8, y + u * 6, u * 2.6, rot);
   }
   // the speaker: six slanted slots in the lower right, and the notch at the bottom
   const gr = document.getElementById('grille');
   if (!gr.children.length) for (let i = 0; i < 6; i++) { const e = document.createElement('div'); e.className = 'slot'; gr.appendChild(e); }
-  [...gr.children].forEach((e, i) => { place(e, u * (69 + i * 4.4), u * 133, u * 1.7, u * 20); e.style.transform = 'rotate(-30deg)'; });
-  place(document.getElementById('notchB'), Dw / 2 - u * 9, Dh - u * 4.6, u * 18, u * 3.4);
+  [...gr.children].forEach((e, i) => { const [x, y] = at(69 + i * 4.4, 133); place(e, x, y, u * 1.7, u * 20); e.style.transform = 'rotate(-30deg)'; });
+  place(document.getElementById('notchB'), Dw / 2 - u * 9, Dh - Math.max(u * 4.6, sa.b + u * 1.5), u * 18, u * 3.4);
 }
 addEventListener('resize', fit);
 function rect(x, y, w, h, c) { ctx.fillStyle = col(c); ctx.fillRect(Math.round(x), Math.round(y), w, h); }
@@ -995,8 +1015,8 @@ const scenes = {
     draw() {
       clear('#fff4dc');
       const y = Math.min(70, -20 + bootT / 1.2 * 90);
-      text('POCKET', W / 2, y, 24, '#263080', 'center', -1);
-      if (bootT > 1.25) text('퀴디치 포켓', W / 2, y + 22, 9, '#3b6a8a', 'center', -1);
+      text('POCKET BOY', W / 2, y, 22, '#263080', 'center', -1);
+      if (bootT > 1.25) text('포켓보이', W / 2, y + 22, 9, '#3b6a8a', 'center', -1);
     },
   },
   menu: {
