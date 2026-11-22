@@ -3,7 +3,7 @@
 // Date: 2026-11-21
 // Every tuning value lives here, each with value, min, max and step. The game reads them live
 // through tune.<name> (index.html); the tweak panel, an add-on, writes them back here.
-// Distances are in screen pixels of the 160x144 view, times in seconds, speeds in pixels per second.
+// Distances are in art pixels of the 256x160 view, times in seconds, speeds in pixels per second.
 window.CONFIG = {
   seed: 1, // every gameplay random call reads rng(), seeded from this (or ?seed= in the address)
   volume: { value: 0.35, min: 0, max: 1, step: 0.05 },
@@ -15,7 +15,7 @@ window.CONFIG = {
   glimmerPoints: { value: 50, min: 10, max: 200, step: 5 },
   laxUntil: { value: 30, min: 0, max: 120, step: 5 },        // s, rivals play loose until here
   rampUntil: { value: 75, min: 10, max: 200, step: 5 },      // s, rivals at full strength from here
-  fieldWidth: { value: 400, min: 200, max: 800, step: 10 },  // px, the pitch from end to end (2.5 screens)
+  fieldWidth: { value: 480, min: 256, max: 960, step: 10 },  // px, the pitch from end to end (about 2 screens)
 
   // ---- Flying ----
   flySpeed: { value: 66, min: 30, max: 140, step: 2 },       // px/s

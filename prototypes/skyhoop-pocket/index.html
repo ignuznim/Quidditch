@@ -10,36 +10,38 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>스카이훅 포켓</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #0d1a14; overflow: hidden; touch-action: none;
+  html, body { margin: 0; height: 100%; background: #1a1030; overflow: hidden; touch-action: none;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
   body { font-variant-numeric: tabular-nums; }
-  canvas { display: block; margin: 0 auto; touch-action: none; }
-  #pad { position: fixed; left: 0; right: 0; bottom: 0; display: none; touch-action: none;
+  #screen { position: relative; margin: 0 auto; }
+  #screen canvas { display: block; position: absolute; left: 0; top: 0; touch-action: none; }
+  #game { image-rendering: pixelated; image-rendering: crisp-edges; }
+  #hud { pointer-events: none; }
+  #pad { position: fixed; left: 0; right: 0; bottom: 0; height: 0; display: none; touch-action: none;
     font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif; }
   body.touch #pad { display: block; }
   .dpad { position: absolute; width: 150px; height: 150px; left: 22px; bottom: 40px; }
-  .dpad .arm { position: absolute; background: #1d3a2e; border: 3px solid #081820; border-radius: 6px; }
+  .dpad .arm { position: absolute; background: #3b2f5c; border: 3px solid #120a24; border-radius: 6px; }
   .dpad .h { left: 0; top: 50px; width: 144px; height: 44px; }
   .dpad .v { left: 50px; top: 0; width: 44px; height: 144px; }
-  .dpad .hub { position: absolute; left: 61px; top: 61px; width: 28px; height: 28px; border-radius: 50%; background: #13261d; }
+  .dpad .hub { position: absolute; left: 61px; top: 61px; width: 28px; height: 28px; border-radius: 50%; background: #2a2045; }
   .dpad .tip { position: absolute; width: 0; height: 0; border: 9px solid transparent; }
-  .dpad .up { left: 63px; top: 8px; border-bottom-color: #88c070; }
-  .dpad .dn { left: 63px; bottom: 8px; border-top-color: #88c070; }
-  .dpad .lf { left: 8px; top: 63px; border-right-color: #88c070; }
-  .dpad .rt { right: 8px; top: 63px; border-left-color: #88c070; }
-  .dpad.on-up .up, .dpad.on-dn .dn, .dpad.on-lf .lf, .dpad.on-rt .rt { border-color: transparent; }
-  .dpad.on-up .up { border-bottom-color: #e0f8d0; } .dpad.on-dn .dn { border-top-color: #e0f8d0; }
-  .dpad.on-lf .lf { border-right-color: #e0f8d0; } .dpad.on-rt .rt { border-left-color: #e0f8d0; }
-  .btn { position: absolute; border-radius: 50%; background: #346856; border: 3px solid #081820; color: #e0f8d0;
-    display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 4px 0 #081820; }
-  .btn.down { transform: translateY(3px); box-shadow: 0 1px 0 #081820; background: #88c070; color: #081820; }
-  .btn small { display: block; font-size: 11px; font-weight: 600; opacity: 0.9; }
+  .dpad .up { left: 63px; top: 8px; border-bottom-color: #ffd84a; }
+  .dpad .dn { left: 63px; bottom: 8px; border-top-color: #ffd84a; }
+  .dpad .lf { left: 8px; top: 63px; border-right-color: #ffd84a; }
+  .dpad .rt { right: 8px; top: 63px; border-left-color: #ffd84a; }
+  .dpad.on-up .up { border-bottom-color: #ffffff; } .dpad.on-dn .dn { border-top-color: #ffffff; }
+  .dpad.on-lf .lf { border-right-color: #ffffff; } .dpad.on-rt .rt { border-left-color: #ffffff; }
+  .btn { position: absolute; border-radius: 50%; border: 3px solid #120a24; color: #fff4dc;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 4px 0 #120a24; }
+  .btn.down { transform: translateY(3px); box-shadow: 0 1px 0 #120a24; filter: brightness(1.25); }
+  .btn small { display: block; font-size: 11px; font-weight: 700; opacity: 0.95; }
   .btn span { text-align: center; line-height: 1.05; }
-  #bA { width: 78px; height: 78px; right: 22px; bottom: 92px; font-size: 26px; }
-  #bB { width: 64px; height: 64px; right: 110px; bottom: 42px; font-size: 22px; }
-  .pill { position: absolute; bottom: 10px; height: 22px; padding: 0 12px; border-radius: 11px; background: #1d3a2e;
-    border: 2px solid #081820; color: #88c070; font-size: 12px; font-weight: 700; display: flex; align-items: center; }
-  .pill.down { background: #88c070; color: #081820; }
+  #bA { width: 78px; height: 78px; right: 22px; bottom: 92px; font-size: 26px; background: #e06a2c; }
+  #bB { width: 64px; height: 64px; right: 110px; bottom: 42px; font-size: 22px; background: #2a8f86; }
+  .pill { position: absolute; bottom: 10px; height: 22px; padding: 0 12px; border-radius: 11px; background: #3b2f5c;
+    border: 2px solid #120a24; color: #fff4dc; font-size: 12px; font-weight: 700; display: flex; align-items: center; }
+  .pill.down { background: #ffd84a; color: #1a1030; }
   #bStart { left: 50%; transform: translateX(4px); }
   #bMute { left: 50%; transform: translateX(-84px); }
   @media (orientation: landscape) {
@@ -50,7 +52,7 @@
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
 <div id="pad">
   <div class="dpad" id="dpad"><div class="arm h"></div><div class="arm v"></div><div class="hub"></div>
     <div class="tip up"></div><div class="tip dn"></div><div class="tip lf"></div><div class="tip rt"></div></div>
@@ -62,19 +64,20 @@
 <script src="config.js"></script>
 <script>
 'use strict';
-// 스카이훅 포켓: a side-view broom sky sport in four shades of green pixels.
-// The view is 160x144 pixels, scaled by whole numbers; every figure is a pixel sprite drawn below.
+// 스카이훅 포켓: a side-view broom sky sport in colourful pixel art.
+// The pixel world is drawn at 256x160 on #game and scaled up crisply; all text is drawn on #hud
+// at the screen's own resolution, so letters stay sharp while the art stays pixels.
 
 // ---- Built to be checked ----------------------------------------------------------------
 const params = new URLSearchParams(location.search);
 const tune = new Proxy({}, { get: (_, k) => CONFIG[k].value }); // live: tune.speed is CONFIG.speed.value
 const STEP = 1 / 60;            // simulation step in seconds; motion is per second, never per frame
-const W = 160, H = 144;         // the native pixel screen
-const PIXEL = true;             // whole-number scale, no smoothing
+const W = 256, H = 160;         // the pixel screen
+const PIXEL = true;             // crisp scale, no smoothing
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif';
 const TITLE = '스카이훅 포켓';
-const CONTROLS = ['방향키: 이동', 'Z 짧게: 패스', 'Z 길게: 슛', 'X: 돌진·빼앗기', 'Enter: 정지'];
-const TOUCH_CONTROLS = ['십자키: 이동', 'A 짧게: 패스', 'A 길게: 슛', 'B: 돌진·빼앗기'];
+const CONTROLS = ['방향키 / WASD: 이동', 'Z 짧게: 패스 · 길게 눌렀다 떼기: 슛', 'X: 돌진해서 빼앗기', 'Enter: 일시정지 · M: 소리'];
+const TOUCH_CONTROLS = ['십자키: 이동', 'A 짧게: 패스 · 길게 눌렀다 떼기: 슛', 'B: 돌진해서 빼앗기', 'START: 일시정지'];
 const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
 const CHEAP = params.get('render') === 'cheap';
 let seed;
@@ -86,69 +89,58 @@ function rng() { // mulberry32; every gameplay random call reads this, never Mat
 }
 const events = []; // window.game.events: anything the game wants a run to see
 
-// ---- The four shades --------------------------------------------------------------------
-// 0 sky and highlights · 1 clouds, far towers, our robes · 2 stands, rival robes · 3 outlines, threats
-const P = ['#e0f8d0', '#88c070', '#346856', '#081820'];
+// ---- Colours --------------------------------------------------------------------------------
+// UI shades by number: 0 cream, 1 pale sky, 2 deep blue, 3 ink. Sprites use the letters in COL.
+const P = ['#fff4dc', '#bfe6fa', '#3b6a8a', '#1a1030'];
+const COL = {
+  '0': '#fff4dc', '1': '#bfe6fa', '2': '#3b6a8a', '3': '#1a1030',
+  o: '#f08a3c', O: '#b4502a', t: '#3fb6a8', T: '#1f5f63', p: '#2a2040', s: '#f2c29a',
+  r: '#d2412f', R: '#7e2424', y: '#ffd84a', Y: '#c58a1c', w: '#ffffff', b: '#7a4a2a', h: '#e6b85c', g: '#8a86a0', f: '#ff8a2a',
+};
+const col = c => typeof c === 'number' ? P[c] : (COL[c] || c);
 
 // ---- Screen ---------------------------------------------------------------------------
+const screenEl = document.getElementById('screen');
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const hudCanvas = document.getElementById('hud');
+const hctx = hudCanvas.getContext('2d');
 let touchMode = params.get('touch') === '1' || matchMedia('(pointer: coarse)').matches;
-function fit() { // whole-number scale; on a phone held upright the buttons get the space under the screen
+let hudScale = 1, shakeX = 0;
+function fit() { // the pixel art scales by whole device pixels; on an upright phone the buttons get the space under it
   document.body.classList.toggle('touch', touchMode);
   const portrait = innerHeight > innerWidth;
   const availH = innerHeight - (touchMode && portrait ? tune.touchPanel : 0);
+  const dpr = devicePixelRatio || 1;
   const k = Math.min(innerWidth / W, availH / H);
-  const s = Math.max(1, Math.floor(k));
+  // CSS pixels per art pixel: a whole number of device pixels, unless the screen is so dense
+  // (3 or more device pixels per art pixel) that an uneven pixel cannot be seen: then fill the width
+  const s = k * dpr >= 3 ? k : Math.max(1, Math.floor(k * dpr)) / dpr;
   canvas.width = W; canvas.height = H;
-  canvas.style.width = W * s + 'px'; canvas.style.height = H * s + 'px';
-  canvas.style.marginTop = Math.max(0, Math.floor((availH - H * s) / (touchMode && portrait ? 3 : 2))) + 'px';
-  canvas.style.imageRendering = 'pixelated';
+  const cw = Math.round(W * s), ch = Math.round(H * s);
+  screenEl.style.width = cw + 'px'; screenEl.style.height = ch + 'px';
+  screenEl.style.marginTop = Math.max(0, Math.floor((availH - ch) / (touchMode && portrait ? 3 : 2))) + 'px';
+  for (const c of [canvas, hudCanvas]) { c.style.width = cw + 'px'; c.style.height = ch + 'px'; }
+  hudScale = s * dpr;
+  hudCanvas.width = Math.round(W * hudScale); hudCanvas.height = Math.round(H * hudScale);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
 }
 addEventListener('resize', fit); fit();
-function rect(x, y, w, h, c) { ctx.fillStyle = P[c]; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-function clear(c) { ctx.fillStyle = typeof c === 'number' ? P[c] : c; ctx.fillRect(0, 0, W, H); }
-
-// Text: drawn once at its size, then snapped to the four shades, so letters are pixels too.
-const textCache = new Map();
-function textImage(s, size, c, outline) {
-  const key = s + '|' + size + '|' + c + '|' + outline;
-  let img = textCache.get(key);
-  if (img) return img;
-  const m = document.createElement('canvas').getContext('2d');
-  m.font = `700 ${size}px ${FONT}`;
-  const w = Math.ceil(m.measureText(s).width) + 4, h = size + 6;
-  const src = document.createElement('canvas'); src.width = w; src.height = h;
-  const g = src.getContext('2d'); g.font = `700 ${size}px ${FONT}`; g.textBaseline = 'middle'; g.fillStyle = '#fff';
-  g.fillText(s, 2, h / 2 + 0.5);
-  const d = g.getImageData(0, 0, w, h).data, on = new Uint8Array(w * h);
-  for (let i = 0; i < w * h; i++) on[i] = d[i * 4 + 3] > 120 ? 1 : 0;
-  const out = document.createElement('canvas'); out.width = w; out.height = h;
-  const o = out.getContext('2d');
-  if (outline >= 0) {
-    o.fillStyle = P[outline];
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      if (on[y * w + x]) continue;
-      let n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < w && yy < h && on[yy * w + xx]) n++; }
-      if (n) o.fillRect(x, y, 1, 1);
-    }
-  }
-  o.fillStyle = P[c];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (on[y * w + x]) o.fillRect(x, y, 1, 1);
-  textCache.set(key, out);
-  return out;
+function rect(x, y, w, h, c) { ctx.fillStyle = col(c); ctx.fillRect(Math.round(x), Math.round(y), w, h); }
+function clear(c) { ctx.fillStyle = col(c); ctx.fillRect(0, 0, W, H); }
+/** Sharp text on the HUD layer; x, y in art pixels (y is the middle of the line), size in art pixels. */
+function text(s, x, y, size = 8, c = 0, align = 'left', outline = 3) {
+  const k = hudScale;
+  hctx.font = `800 ${Math.round(size * k)}px ${FONT}`; hctx.textAlign = align; hctx.textBaseline = 'middle';
+  hctx.lineJoin = 'round';
+  if (outline !== -1) { hctx.lineWidth = Math.max(2, size * k * 0.24); hctx.strokeStyle = col(outline); hctx.strokeText(String(s), (x + shakeX) * k, y * k); }
+  hctx.fillStyle = col(c); hctx.fillText(String(s), (x + shakeX) * k, y * k);
 }
-/** Pixel text at (x, y), y is the middle of the line. */
-function text(s, x, y, size = 11, c = 3, align = 'left', outline = -1) {
-  const img = textImage(String(s), size, c, outline);
-  const ox = align === 'center' ? img.width / 2 : align === 'right' ? img.width : 0;
-  ctx.drawImage(img, Math.round(x - ox), Math.round(y - img.height / 2));
-}
-// A 3x5 pixel font for numbers and the clock
+function hudClear() { hctx.clearRect(0, 0, hudCanvas.width, hudCanvas.height); }
+// A 3x5 pixel font for the big score on the results screen
 const DIG = { '0': '111101101101111', '1': '010110010010111', '2': '111001111100111', '3': '111001111001111', '4': '101101111001001',
   '5': '111100111001111', '6': '111100111101111', '7': '111001010010010', '8': '111101111101111', '9': '111101111001111', ':': '000010000010000' };
-function digits(s, x, y, c = 0, scale = 1, align = 'left') {
+function digits(s, x, y, c = 3, scale = 1, align = 'left') {
   s = String(s); const w = s.length * 4 * scale - scale;
   let px = Math.round(align === 'center' ? x - w / 2 : align === 'right' ? x - w : x);
   for (const ch of s) {
@@ -157,42 +149,42 @@ function digits(s, x, y, c = 0, scale = 1, align = 'left') {
   }
 }
 
-// ---- Sprites: rows of shade digits, '.' is see-through; drawn facing right --------------
+// ---- Sprites: rows of colour letters (see COL), '.' is see-through; drawn facing right -----
 const SPR = {
-  usFlyer: [
-    '......333', '.....31113', '....3111113', '....3100313', '....3100013', '..1..31113', '.11.3111103',
-    '.1131111003', '..31111113', '..3111113', '22223333333333', '2.2.3..3', '....33'],
-  rivalFlyer: [
-    '.......3', '......33', '.....333', '....33333', '...3333333', '....32023', '....3200333',
-    '.3..32223', '.33322222', '..3222223', '.32222223', '22223333333333', '2.2.3..3', '....33'],
-  usKeeper: [
-    '.....3333', '....311113', '...31000013', '...31003013', '...31000013', '.3331111113333', '30031111113003',
-    '30031111113003', '.33311111133', '...31111113', '22223333333333', '2.2.33..33', '....33..33'],
-  rivalKeeper: [
-    '..3.......3', '..33.3333.33', '...33222233', '...32000023', '...32003023', '.333222222333', '3003222222303',
-    '3003222222303', '.33322222233', '...32222223', '22223333333333', '2.2.33..33', '....33..33'],
-  volla: ['..333..', '.32223.', '3220223', '3202223', '3222023', '.32223.', '..333..'],
-  rumbler: ['....3....', '.3.333.3.', '..33333..', '.3332333.', '333323333', '.3333333.', '..33333..', '.3.333.3.', '....3....'],
-  glimmerA: ['11.....11', '.11.3.11.', '...303...', '..30003..', '...303...', '....3....'],
-  glimmerB: ['.........', '...333...', '1113031111', '.1300031.', '...303...', '....3....'],
-  hawk: ['3.....3', '33.3.33', '.33333.', '..333..', '...3...'],
-  crow: ['..33...', '333333.', '.3333.3', '..33...', '.3.3...'],
+  usFlyer: [ // 등불매: an orange hood, a short wing cape
+    '......333', '.....3ooo3', '....3ooooo3', '....3oss3o3', '....3osss3', '.O...3oo3', '.OO.3oooos3',
+    '.OOo3oooo0s3', '..3ooooo3', '..3oooo3', 'hhhhbbbbbbbbbbb', 'h.h.3..3', '....33'],
+  rivalFlyer: [ // 폭풍까마귀: a pointed hat and a gold beak
+    '.......3', '......3p3', '.....3pp3', '....3ppp3', '...3333333', '....3tss3', '....3s3sYY',
+    '.T..3sss3', '.TT3ttttt3', '..3tttt0t3', '.3ttttt3', 'hhhhbbbbbbbbbbb', 'h.h.3..3', '....33'],
+  usKeeper: [ // big cream gloves
+    '.....3333', '....3oooo3', '...3osssso3', '...3os3sso3', '...3ossss3', '.333oooooo333', '3ww3oooooo3ww3',
+    '3ww3oo00oo3ww3', '.333oooooo333', '...3oooooo3', 'hhhhbbbbbbbbbbb', 'h.h.33..33', '....33..33'],
+  rivalKeeper: [ // horned helmet
+    '..g.......g', '..gg.3333.gg', '...33pppp33', '...3tsssst3', '...3ts3sst3', '.333tttttt333', '3ww3tttttt3ww3',
+    '3ww3tttttt3ww3', '.333tttttt333', '...3tttttt3', 'hhhhbbbbbbbbbbb', 'h.h.33..33', '....33..33'],
+  volla: ['..333..', '.3rrr3.', '3rr0rr3', '3r0rrR3', '3rrr0R3', '.3RRR3.', '..333..'],
+  rumbler: ['....f....', '.f.333.f.', '..33333..', '.33g3333.', 'f3g33333f', '.3333333.', '..33333..', '.f.333.f.', '....f....'],
+  glimmerA: ['ww.....ww', '.www.www.', '...3y3...', '..3yyY3..', '...3Y3...'],
+  glimmerB: ['.........', '...3y3...', 'www3yY3ww', '.ww3Y3ww.', '.........'],
+  hawk: ['o.....o', 'oo.o.oo', '.ooooo.', '..ooo..', '...o...'],
+  crow: ['..tt...', 'tttttt.', '.tttt.t', '..tt...', '.t.t...'],
 };
 const sprCache = new Map();
-function sprite(name, flip, invert) {
-  const key = name + (flip ? 'L' : 'R') + (invert ? 'i' : '');
+function sprite(name, flip) {
+  const key = name + (flip ? 'L' : 'R');
   let c = sprCache.get(key);
   if (c) return c;
   const rows = SPR[name], w = Math.max(...rows.map(r => r.length)), h = rows.length;
   c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d');
-  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const ch = r[x]; if (ch === '.') continue; let v = +ch; if (invert) v = 3 - v; g.fillStyle = P[v]; g.fillRect(flip ? w - 1 - x : x, y, 1, 1); } });
+  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const ch = r[x]; if (ch === '.') continue; g.fillStyle = COL[ch]; g.fillRect(flip ? w - 1 - x : x, y, 1, 1); } });
   sprCache.set(key, c);
   return c;
 }
-/** Draws a sprite centred on (x, y) in screen pixels. */
-function drawSpr(name, x, y, flip = false, invert = false) {
-  const c = sprite(name, flip, invert);
+/** Draws a sprite centred on (x, y) in art pixels. */
+function drawSpr(name, x, y, flip = false) {
+  const c = sprite(name, flip);
   ctx.drawImage(c, Math.round(x - c.width / 2), Math.round(y - c.height / 2));
 }
 
@@ -224,7 +216,7 @@ function padAt(e) {
   if (l > 12) { const a = Math.atan2(dy, dx), oct = Math.round(a / (Math.PI / 4)); padDir.x = Math.round(Math.cos(oct * Math.PI / 4)); padDir.y = Math.round(Math.sin(oct * Math.PI / 4)); }
   dpad.className = 'dpad' + (padDir.y < 0 ? ' on-up' : '') + (padDir.y > 0 ? ' on-dn' : '') + (padDir.x < 0 ? ' on-lf' : '') + (padDir.x > 0 ? ' on-rt' : '');
 }
-dpad.addEventListener('pointerdown', e => { e.preventDefault(); touchMode = true; fit(); padId = e.pointerId; dpad.setPointerCapture(e.pointerId); padAt(e); startAudio(); });
+dpad.addEventListener('pointerdown', e => { e.preventDefault(); if (!touchMode) { touchMode = true; fit(); } padId = e.pointerId; dpad.setPointerCapture(e.pointerId); padAt(e); startAudio(); });
 dpad.addEventListener('pointermove', e => { if (e.pointerId === padId) padAt(e); });
 function padUp(e) { if (e.pointerId === padId) { padId = null; padDir.x = padDir.y = 0; dpad.className = 'dpad'; } }
 dpad.addEventListener('pointerup', padUp); dpad.addEventListener('pointercancel', padUp);
@@ -236,7 +228,7 @@ function bindButton(id, code) {
 }
 bindButton('bA', 'KeyZ'); bindButton('bB', 'KeyX'); bindButton('bStart', 'Enter'); bindButton('bMute', 'KeyM');
 canvas.addEventListener('pointerdown', e => { // a tap on the screen starts and restarts
-  if (e.pointerType !== 'mouse') { touchMode = true; fit(); }
+  if (e.pointerType !== 'mouse' && !touchMode) { touchMode = true; fit(); }
   if (scene === 'title' || scene === 'results' || scene === 'pause') hit.add('Enter');
 });
 addEventListener('contextmenu', e => e.preventDefault());
@@ -279,8 +271,8 @@ const SFX = {
 
 // ---- The match state ------------------------------------------------------------------
 // Pitch: x from 0 to fieldWidth, y from the top of the sky (TOP) to the turf (FLOOR).
-const TOP = 16, FLOOR = 118, HOOP_Y = [42, 64, 86];
-const hoopX = side => side > 0 ? tune.fieldWidth - 14 : 14; // side +1: the right end, which 등불매 attacks
+const TOP = 16, FLOOR = 134, MID = 78, HOOP_Y = [54, 78, 102];
+const hoopX = side => side > 0 ? tune.fieldWidth - 16 : 16; // side +1: the right end, which 등불매 attacks
 let scene, state;
 function mkRider(id, team, role, x, y) {
   return { id, team, role, x, y, px: x, py: y, vx: 0, vy: 0, face: team === 0 ? 1 : -1, stun: 0, dashT: 0, dashCd: 0,
@@ -290,18 +282,18 @@ function reset() {
   seed = Number(params.get('seed')) || CONFIG.seed;
   const fw = tune.fieldWidth, mid = fw / 2;
   const R = [
-    mkRider(0, 0, 'flyer', mid - 10, 64), mkRider(1, 0, 'flyer', mid - 40, 44), mkRider(2, 0, 'keeper', 30, 64),
-    mkRider(3, 1, 'flyer', mid + 60, 54), mkRider(4, 1, 'flyer', mid + 80, 82), mkRider(5, 1, 'keeper', fw - 30, 64),
+    mkRider(0, 0, 'flyer', mid - 10, MID), mkRider(1, 0, 'flyer', mid - 40, MID - 20), mkRider(2, 0, 'keeper', 30, MID),
+    mkRider(3, 1, 'flyer', mid + 60, MID - 10), mkRider(4, 1, 'flyer', mid + 80, MID + 18), mkRider(5, 1, 'keeper', fw - 30, MID),
   ];
   R[0].immune = tune.kickoffGrace;
   state = {
     t: 0, score: [0, 0], gained: '', over: false, winner: -1, endReason: '', riders: R,
-    ball: { x: mid - 4, y: 66, px: mid - 4, py: 66, vx: 0, vy: 0, holder: 0, mode: 'held', team: 0, passTo: -1, age: 0, lastHolder: 0, tried: [], saveTried: false, perfect: false, trail: [] },
+    ball: { x: mid - 4, y: MID + 2, px: mid - 4, py: MID + 2, vx: 0, vy: 0, holder: 0, mode: 'held', team: 0, passTo: -1, age: 0, lastHolder: 0, tried: [], saveTried: false, perfect: false, trail: [] },
     rumblers: [
       { x: mid, y: 24, px: mid, py: 24, vx: 0, vy: 0, active: false, rest: 0, target: -1, retarget: 0 },
       { x: mid + 40, y: 24, px: mid + 40, py: 24, vx: 0, vy: 0, active: false, rest: 0, target: -1, retarget: 0 },
     ],
-    glimmer: { active: false, x: mid, y: 40, px: mid, py: 40, vx: 0, vy: 0, wx: 1, wy: 0, turnT: 0, dartT: 0 },
+    glimmer: { active: false, x: mid, y: MID - 30, px: mid, py: MID - 30, vx: 0, vy: 0, wx: 1, wy: 0, turnT: 0, dartT: 0 },
     camX: mid - W / 2, camPX: mid - W / 2, shake: 0,
     charging: false, holdT: 0, actPrev: false, buffer: 0,
     msgs: [], lantern: { '1': 0, '-1': 0 }, cheer: 0, tut: 0, tutMoved: 0, glimmerNote: 0, resultsT: 0,
@@ -580,7 +572,7 @@ function aiFlyer(r, dt) {
     if (r.team === 0) { // your teammate sets you up: back to you, and shoots only when you are far or it waited long
       const youFar = mate.stun > 0 || dist(mate, r) > 120;
       if (r.holdT > tune.mateReturnPass && !youFar) { pass(r, mate); return; }
-      if (!youFar && r.holdT < 3) { tgt = { x: clamp(r.x + side * 30, 20, tune.fieldWidth - 20), y: r.y < 64 ? r.y + 10 : r.y - 10 }; const inp = steerInput(r, tgt.x, tgt.y); fly(r, inp.ix, inp.iy, dt, m * 0.8); return; }
+      if (!youFar && r.holdT < 3) { tgt = { x: clamp(r.x + side * 30, 20, tune.fieldWidth - 20), y: r.y < MID ? r.y + 10 : r.y - 10 }; const inp = steerInput(r, tgt.x, tgt.y); fly(r, inp.ix, inp.iy, dt, m * 0.8); return; }
     }
     const pressed = foes.some(o => dist(o, r) < 16);
     if (r.team === 1 && pressed && r.holdT > 0.6 && mate.stun <= 0 && (mate.x - r.x) * side > 10) { pass(r, mate); return; }
@@ -596,17 +588,17 @@ function aiFlyer(r, dt) {
   } else {
     const carrier = b.holder >= 0 ? R[b.holder] : null;
     if (b.mode === 'pass' && b.passTo === r.id) tgt = { x: b.x, y: b.y };
-    else if (carrier && carrier.team === r.team) tgt = { x: clamp(carrier.x + side * 40, 20, tune.fieldWidth - 20), y: carrier.y < 64 ? carrier.y + 24 : carrier.y - 24 };
+    else if (carrier && carrier.team === r.team) tgt = { x: clamp(carrier.x + side * 40, 20, tune.fieldWidth - 20), y: carrier.y < MID ? carrier.y + 24 : carrier.y - 24 };
     else if (carrier && carrier.role !== 'keeper') {
       const chaser = r.team === 0 ? r : [r, mate].sort((p, q) => dist(p, carrier) - dist(q, carrier))[0];
       if (chaser === r) {
         tgt = { x: carrier.x + carrier.vx * 0.3, y: carrier.y + carrier.vy * 0.3 };
         if (dist(r, carrier) < 26 && r.dashCd <= 0 && rng() < 0.08) startDash(r, carrier.x - r.x, carrier.y - r.y);
       } else tgt = { x: lerp(hoopX(-side), carrier.x, 0.5), y: carrier.y };
-    } else if (carrier) tgt = { x: tune.fieldWidth / 2 - side * 20, y: r.id % 2 ? 46 : 82 };
+    } else if (carrier) tgt = { x: tune.fieldWidth / 2 - side * 20, y: r.id % 2 ? MID - 26 : MID + 22 };
     else {
       const near = r.team === 0 ? r : [r, mate].sort((p, q) => dist(p, b) - dist(q, b))[0];
-      tgt = near === r ? { x: b.x, y: b.y } : { x: lerp(b.x, tune.fieldWidth / 2, 0.5), y: r.id % 2 ? 46 : 82 };
+      tgt = near === r ? { x: b.x, y: b.y } : { x: lerp(b.x, tune.fieldWidth / 2, 0.5), y: r.id % 2 ? MID - 26 : MID + 22 };
     }
   }
   const inp = steerInput(r, tgt.x, tgt.y); fly(r, inp.ix, inp.iy, dt, m);
@@ -625,7 +617,7 @@ function aiKeeper(r, dt) {
   r.stun = Math.max(0, r.stun - dt); r.immune = Math.max(0, r.immune - dt);
   let ty = clamp(b.y, HOOP_Y[0] - 4, HOOP_Y[2] + 4), sp = tune.keeperSpeed;
   if (b.holder === r.id) {
-    r.holdT += dt; r.immune = 1; ty = 64;
+    r.holdT += dt; r.immune = 1; ty = MID;
     if (r.holdT > 0.8) {
       const mates = RD().filter(o => o.team === r.team && o.role === 'flyer' && o.stun <= 0);
       const to = r.team === 0 ? (mates.find(o => o.id === 0) || mates[0]) : mates.sort((p, q) => (q.x - p.x) * -side)[0];
@@ -700,56 +692,74 @@ function updateMatch(dt) {
   if (!state.over && state.t >= tune.matchTime) finish('time');
 }
 
+
 // ---- Drawing ---------------------------------------------------------------------------------
-function dither(x, y, w, h, c, every = 2) { // a checker of one shade, the handheld way to shade
-  ctx.fillStyle = P[c];
-  for (let yy = 0; yy < h; yy++) for (let xx = (yy % 2); xx < w; xx += every) ctx.fillRect(x + xx, y + yy, 1, 1);
+function dither(x, y, w, h, c, every = 2) { // a checker of one colour, the pixel way to blend
+  ctx.fillStyle = col(c);
+  for (let yy = 0; yy < h; yy++) for (let xx = (yy % 2); xx < w; xx += every) ctx.fillRect(Math.round(x) + xx, Math.round(y) + yy, 1, 1);
 }
+const SKY = ['#4f9fe0', '#6cb4ec', '#8cc8f2', '#afdcf7', '#cdebfa'];
+const CROWD = ['#f08a3c', '#3fb6a8', '#ffd84a', '#d2412f', '#fff4dc', '#8a6ad0'];
 function drawWorld(cam, tNow) {
   const cx = Math.round(cam);
-  clear(0);
-  // far clouds and towers drift slower than the pitch
-  const pc = Math.round(cx * 0.3), pt = Math.round(cx * 0.55);
-  for (let i = 0; i < 6; i++) {
-    const x = ((i * 71 - pc) % 260 + 260) % 260 - 40, y = 20 + (i * 13) % 24;
-    dither(x, y, 26, 6, 1); rect(x + 4, y - 2, 16, 2, 1); rect(x + 2, y + 6, 22, 1, 1);
+  // the sky in bands, blended by dither at each edge
+  const bandH = Math.ceil((FLOOR - 10) / SKY.length);
+  SKY.forEach((c, i) => { rect(0, i * bandH, W, bandH, c); if (i) dither(0, i * bandH - 2, W, 2, SKY[i - 1]); });
+  // the sun and far clouds drift slower than the pitch
+  const pc = Math.round(cx * 0.2), pt = Math.round(cx * 0.5);
+  const sx = 200 - Math.round(cx * 0.05);
+  rect(sx - 6, 24, 12, 12, '#fff2b0'); rect(sx - 8, 26, 16, 8, '#fff2b0'); rect(sx - 4, 22, 8, 16, '#fff2b0'); rect(sx - 4, 26, 8, 8, '#ffffff');
+  for (let i = 0; i < 7; i++) {
+    const x = ((i * 83 - pc) % 340 + 340) % 340 - 50, y = 22 + (i * 17) % 30;
+    rect(x + 4, y, 22, 4, 'w'); rect(x, y + 4, 32, 5, 'w'); rect(x + 2, y + 9, 28, 2, '#d8eefa'); rect(x + 10, y - 3, 10, 3, 'w');
   }
-  for (let i = 0; i < 9; i++) { // the arena's towers with flags
-    const x = ((i * 57 - pt) % 360 + 360) % 360 - 60, h = 34 + (i * 7) % 16, y = FLOOR - h;
-    rect(x, y, 10, h, 1); rect(x - 1, y - 1, 12, 2, 2); rect(x + 1, y - 7, 8, 6, 2); rect(x + 3, y - 10, 4, 3, 2); rect(x + 4, y - 13, 2, 3, 3);
-    rect(x + 6, y - 13, 5, 3, i % 2 ? 0 : 2);
-    for (let w = 0; w < h - 6; w += 9) rect(x + 4, y + 4 + w, 2, 3, 2);
+  // far hills, then the arena's towers with flags
+  for (let x = -((cx * 0.35) % 64) - 64; x < W + 64; x += 64) {
+    for (let k = 0; k < 64; k++) { const hgt = Math.round(10 + Math.sin(k / 64 * Math.PI) * 14); rect(x + k, FLOOR - hgt, 1, hgt, '#7cc07a'); }
+    dither(x, FLOOR - 16, 64, 6, '#5a9e64');
   }
-  // strings of lanterns along the top, blinking after a goal
+  for (let i = 0; i < 10; i++) {
+    const x = ((i * 61 - pt) % 420 + 420) % 420 - 70, h = 40 + (i * 7) % 18, y = FLOOR - h;
+    const roof = i % 2 ? '#d8692e' : '#2f8f86', flag = i % 2 ? 'o' : 't';
+    rect(x, y, 12, h, '#cdb89c'); rect(x + 9, y, 3, h, '#a8937a'); rect(x - 1, y - 1, 14, 2, '#8a7a66');
+    rect(x, y - 8, 12, 7, roof); rect(x + 2, y - 12, 8, 4, roof); rect(x + 4, y - 15, 4, 3, roof); rect(x + 5, y - 19, 1, 4, '3');
+    rect(x + 6, y - 19, 6, 3, flag);
+    for (let w = 0; w < h - 8; w += 10) rect(x + 5, y + 5 + w, 2, 4, '#4a3a5a');
+  }
+  // strings of lanterns along the top, all flashing after a goal (the signature)
   const flash = Math.max(state.lantern['1'], state.lantern['-1']);
-  for (let x = -((cx * 0.8) % 16) - 16; x < W + 16; x += 16) {
-    for (let k = 0; k < 16; k += 2) { const sag = Math.round(Math.sin(k / 16 * Math.PI) * 3); rect(x + k, 11 + sag, 2, 1, 3); }
-    const on = flash > 0 ? (Math.floor(tNow * 12 + x) % 2 === 0) : true;
-    rect(x + 7, 14, 3, 3, 3); rect(x + 8, 15, 1, 1, on ? 0 : 2);
+  for (let x = -((cx * 0.8) % 20) - 20; x < W + 20; x += 20) {
+    for (let k = 0; k < 20; k += 2) { const sag = Math.round(Math.sin(k / 20 * Math.PI) * 3); rect(x + k, 16 + sag, 2, 1, '3'); }
+    const on = flash > 0 ? (Math.floor(tNow * 12 + x / 20) % 2 === 0) : true;
+    rect(x + 9, 19, 4, 5, '3'); rect(x + 10, 20, 2, 3, flash > 0 ? (on ? 'w' : 'Y') : 'y');
   }
-  // the turf and the stands
-  rect(0, FLOOR, W, H - FLOOR, 2);
+  // the stands and the turf
+  rect(0, FLOOR, W, H - FLOOR, '#7a4a2a'); rect(0, FLOOR, W, 1, '3');
   const jump = state.cheer > 0 ? Math.round(Math.abs(Math.sin(tNow * 18)) * 2) : 0;
-  for (let x = -(cx % 6); x < W; x += 6) {
-    const col = ((x + cx) / 6 | 0) % 3;
-    rect(x + 1, FLOOR + 3 - (col === 1 ? jump : 0), 3, 3, col === 2 ? 1 : 3);
-    rect(x + 1, FLOOR + 9 - (col === 0 ? jump : 0), 3, 3, col === 1 ? 0 : 3);
+  for (let x = -(cx % 7); x < W; x += 7) {
+    const n = ((x + cx) / 7 | 0);
+    rect(x + 1, FLOOR + 3 - (n % 2 ? jump : 0), 4, 4, CROWD[n % CROWD.length]);
+    rect(x + 2, FLOOR + 2 - (n % 2 ? jump : 0), 2, 1, '#f2c29a');
+    rect(x + 4, FLOOR + 10 - (n % 2 ? 0 : jump), 4, 4, CROWD[(n + 3) % CROWD.length]);
+    rect(x + 5, FLOOR + 9 - (n % 2 ? 0 : jump), 2, 1, '#f2c29a');
   }
-  rect(0, FLOOR, W, 1, 3); rect(0, H - 5, W, 5, 3);
-  dither(0, H - 5, W, 1, 2);
+  rect(0, H - 6, W, 6, '#5ab04a'); dither(0, H - 6, W, 2, '#3e8a3a'); rect(0, H - 6, W, 1, '3');
   // hoops on their posts, a lantern on each
   for (const side of [1, -1]) {
     const gx = hoopX(side) - cx;
-    if (gx < -10 || gx > W + 10) continue;
+    if (gx < -12 || gx > W + 12) continue;
     HOOP_Y.forEach((hy, i) => {
       const hit = state.hoopHit && state.hoopHit.side === side && state.hoopHit.i === i;
       const half = tune.hoopHalf;
-      rect(gx, hy + half + 2, 1, FLOOR - hy - half - 2, 3);
-      for (let y = -half - 1; y <= half + 1; y++) { const w = Math.round(Math.sqrt(Math.max(0, 1 - (y / (half + 1)) ** 2)) * 3); rect(gx - w, hy + y, 1, 1, 3); rect(gx + w, hy + y, 1, 1, hit ? 0 : 2); }
-      rect(gx - 1, hy - half - 5, 3, 3, 3);
+      rect(gx - 1, hy + half + 2, 2, FLOOR - hy - half - 2, 'b'); rect(gx + 1, hy + half + 2, 1, FLOOR - hy - half - 2, 'R');
+      for (let y = -half - 1; y <= half + 1; y++) {
+        const w = Math.round(Math.sqrt(Math.max(0, 1 - (y / (half + 1)) ** 2)) * 3);
+        rect(gx - w - 1, hy + y, 1, 1, '3'); rect(gx - w, hy + y, 1, 1, hit ? 'w' : 'y'); rect(gx + w, hy + y, 1, 1, hit ? 'w' : 'Y'); rect(gx + w + 1, hy + y, 1, 1, '3');
+      }
+      rect(gx - 2, hy - half - 7, 5, 5, '3');
       const lit = state.lantern[String(side)] > 0 && Math.floor(tNow * 10) % 2 === 0;
-      rect(gx, hy - half - 4, 1, 1, lit ? 0 : 1);
-      if (lit) { rect(gx - 2, hy - half - 4, 1, 1, 0); rect(gx + 2, hy - half - 4, 1, 1, 0); rect(gx, hy - half - 7, 1, 1, 0); }
+      rect(gx - 1, hy - half - 6, 3, 3, lit ? 'w' : 'y');
+      if (lit) { rect(gx - 4, hy - half - 5, 1, 1, 'w'); rect(gx + 4, hy - half - 5, 1, 1, 'w'); rect(gx, hy - half - 10, 1, 1, 'w'); }
     });
   }
 }
@@ -757,91 +767,85 @@ function ip(e, a) { return { x: lerp(e.px, e.x, a), y: lerp(e.py, e.y, a) }; }
 const SPR_OF = r => r.role === 'keeper' ? (r.team === 0 ? 'usKeeper' : 'rivalKeeper') : (r.team === 0 ? 'usFlyer' : 'rivalFlyer');
 function drawPlay(a) {
   const tNow = clock.now();
-  const sh = state.shake > 0 ? Math.round(Math.sin(tNow * 60) * tune.shake) : 0;
-  const cam = lerp(state.camPX, state.camX, a) + sh, cx = Math.round(cam);
+  shakeX = state.shake > 0 ? Math.round(Math.sin(tNow * 60) * tune.shake) : 0;
+  const cam = lerp(state.camPX, state.camX, a) + shakeX, cx = Math.round(cam);
   drawWorld(cam, tNow);
   const R = RD(), b = state.ball, g = state.glimmer;
-  // the shot's dotted trail
-  b.trail.forEach((p, i) => { if (i % 2 === 0) rect(p.x - cx, p.y, b.perfect ? 2 : 1, b.perfect ? 2 : 1, 3); });
-  // riders
+  // the shot's trail
+  b.trail.forEach((p, i) => { if (i % 2 === 0) rect(p.x - cx - 1, p.y - 1, b.perfect ? 3 : 2, b.perfect ? 3 : 2, b.perfect ? 'y' : 'w'); });
   for (const r of R) {
     const p = ip(r, a), bob = r.role === 'flyer' ? Math.round(Math.sin(tNow * 4 + r.bob)) : 0;
     const blink = r.stun > 0 && Math.floor(tNow * 14) % 2 === 0;
-    if (r.dashT > 0) for (let k = 1; k <= 3; k++) rect(p.x - cx - r.dx * k * 4, p.y + 4 - r.dy * k * 3, 2, 1, 2);
-    if (trailing(r.team) && r.role === 'flyer' && Math.floor(tNow * 8 + r.id) % 3 === 0) rect(p.x - cx - r.face * 9, p.y + 5, 1, 1, 3); // the catch-up sparkle
+    if (r.dashT > 0) for (let k = 1; k <= 3; k++) rect(p.x - cx - r.dx * k * 5, p.y + 4 - r.dy * k * 3, 3, 1, 'w');
+    if (trailing(r.team) && r.role === 'flyer' && Math.floor(tNow * 8 + r.id) % 3 === 0) rect(p.x - cx - r.face * 10, p.y + 5, 1, 1, 'y'); // the catch-up sparkle
     if (!blink) drawSpr(SPR_OF(r), p.x - cx, p.y + bob, r.face < 0);
     if (r.id === 0) { // you: a little arrow above
-      const ay = Math.round(p.y + bob - 12 + Math.sin(tNow * 6));
-      rect(p.x - cx - 2, ay, 5, 1, 3); rect(p.x - cx - 1, ay + 1, 3, 1, 3); rect(p.x - cx, ay + 2, 1, 1, 3);
+      const ay = Math.round(p.y + bob - 13 + Math.sin(tNow * 6));
+      rect(p.x - cx - 2, ay, 5, 1, 'y'); rect(p.x - cx - 1, ay + 1, 3, 1, 'y'); rect(p.x - cx, ay + 2, 1, 1, 'y');
+      rect(p.x - cx - 3, ay - 1, 7, 1, '3');
     }
   }
-  // the ball, rumblers, glimmer
   const bp = ip(b, a);
   drawSpr('volla', bp.x - cx, bp.y);
-  for (const rb of state.rumblers) if (rb.active) {
-    const p = ip(rb, a); drawSpr('rumbler', p.x - cx, p.y, Math.floor(tNow * 8) % 2 === 0);
-  }
+  for (const rb of state.rumblers) if (rb.active) { const p = ip(rb, a); drawSpr('rumbler', p.x - cx, p.y, Math.floor(tNow * 8) % 2 === 0); }
   if (g.active) { const p = ip(g, a); drawSpr(Math.floor(tNow * 16) % 2 ? 'glimmerA' : 'glimmerB', p.x - cx, p.y); }
-  // edge pointers for the ball and the glimmer
-  pointer(bp.x - cx, bp.y, 'volla');
-  if (g.active) pointer(g.x - cx, g.y, 'glimmer');
+  pointer(bp.x - cx, bp.y, 'r');
+  if (g.active) pointer(g.x - cx, g.y, 'y');
   drawHUD();
 }
-function pointer(sx, sy, kind) {
+function pointer(sx, sy, c) { // an arrow at the edge toward the ball or the glimmer
   if (sx >= 2 && sx <= W - 2) return;
-  const left = sx < 2, x = left ? 3 : W - 4, y = clamp(Math.round(sy), TOP + 4, FLOOR - 4);
-  const blink = kind === 'glimmer' ? Math.floor(clock.now() * 6) % 2 : 0;
-  for (let i = 0; i < 3; i++) rect(left ? x + i : x - i, y - i, 1, i * 2 + 1, blink ? 2 : 3);
-  if (kind === 'glimmer') rect(left ? x + 4 : x - 4, y - 1, 1, 3, 3);
+  const left = sx < 2, x = left ? 3 : W - 4, y = clamp(Math.round(sy), TOP + 6, FLOOR - 6);
+  for (let i = 0; i < 4; i++) { rect(left ? x + i : x - i, y - i - 1, 1, i * 2 + 3, '3'); rect(left ? x + i : x - i, y - i, 1, i * 2 + 1, c); }
 }
 function drawHUD() {
   const st = state;
-  rect(0, 0, W, 10, 3);
-  drawSpr('hawk', 6, 5, false, true); digits(st.score[0], 12, 3, 0);
-  drawSpr('crow', W - 6, 5, true, true); digits(st.score[1], W - 12, 3, 0, 1, 'right');
+  rect(0, 0, W, 14, '3'); rect(0, 14, W, 1, '#3b2f5c');
+  drawSpr('hawk', 8, 7); drawSpr('crow', W - 8, 7, true);
+  text(TEAMS_SHORT[0] + ' ' + st.score[0], 15, 7.5, 8, 'o', 'left', -1);
+  text(st.score[1] + ' ' + TEAMS_SHORT[1], W - 15, 7.5, 8, 't', 'right', -1);
   const left = Math.max(0, Math.ceil(tune.matchTime - st.t)), mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
-  const blink = left <= 10 && Math.floor(st.t * 4) % 2 === 0;
-  if (!blink) digits(`${mm}:${ss}`, W / 2, 3, 0, 1, 'center');
-  if (!st.glimmer.active) { // a little bar to the glimmer
-    const f = clamp(st.t / tune.glimmerAt, 0, 1); rect(W / 2 + 14, 4, 16, 3, 2); rect(W / 2 + 14, 4, Math.round(16 * f), 3, 1); rect(W / 2 + 31, 4, 2, 3, 0);
+  if (!(left <= 10 && Math.floor(st.t * 4) % 2 === 0)) text(`${mm}:${ss}`, W / 2, 7.5, 9, 0, 'center', -1);
+  if (!st.glimmer.active) { // a bar filling toward the glimmer
+    const f = clamp(st.t / tune.glimmerAt, 0, 1); rect(W / 2 + 18, 5, 22, 4, '#3b2f5c'); rect(W / 2 + 18, 5, Math.round(22 * f), 4, 'y'); drawSpr('glimmerB', W / 2 + 46, 7);
   }
-  if (trailing(0) && Math.floor(st.t * 3) % 2 === 0) { rect(36, 2, 1, 6, 1); rect(35, 3, 3, 1, 1); rect(34, 4, 5, 1, 1); } // the catch-up arrow
-  // the charge meter, with its perfect window
+  if (trailing(0) && Math.floor(st.t * 3) % 2 === 0) { rect(W / 2 - 40, 3, 1, 8, 'y'); rect(W / 2 - 41, 4, 3, 1, 'y'); rect(W / 2 - 42, 5, 5, 1, 'y'); } // the catch-up arrow
   const me = st.riders[0];
-  if (st.charging) {
-    const c = clamp(st.holdT / tune.chargeTime, 0, 1), x0 = 50, y0 = FLOOR - 16;
-    rect(x0 - 1, y0 - 1, 62, 6, 3); rect(x0, y0, 60, 4, 0);
-    dither(x0 + Math.round(60 * tune.sweetFrom), y0, Math.round(60 * (tune.sweetTo - tune.sweetFrom)), 4, 1);
-    rect(x0, y0 + 1, Math.round(60 * c), 2, 3);
+  if (st.charging) { // the charge meter with its perfect window
+    const c = clamp(st.holdT / tune.chargeTime, 0, 1), x0 = W / 2 - 40, y0 = FLOOR - 18;
+    rect(x0 - 2, y0 - 2, 84, 9, '3'); rect(x0, y0, 80, 5, '#3b2f5c');
+    rect(x0 + Math.round(80 * tune.sweetFrom), y0, Math.round(80 * (tune.sweetTo - tune.sweetFrom)), 5, 'y');
+    rect(x0, y0 + 1, Math.round(80 * c), 3, c >= tune.sweetFrom && c <= tune.sweetTo ? 'w' : 'o');
     const perfect = c >= tune.sweetFrom && c <= tune.sweetTo;
-    text(st.holdT < tune.tapTime ? '떼면 패스' : perfect ? '지금!' : '슛 충전', W / 2, y0 - 9, 12, 3, 'center', 0);
+    text(st.holdT < tune.tapTime ? '떼면 패스' : perfect ? '지금 떼면 완벽!' : '슛 충전 중', W / 2, y0 - 9, 9, perfect ? 'y' : 0, 'center');
   }
-  if (me.stun > 0) text('휘청!', W / 2, FLOOR - 28, 12, 3, 'center', 0);
-  // the one message
-  for (const m of st.msgs) text(m.s, W / 2, 40, 15, 3, 'center', 0);
-  // first-minute prompts
+  if (me.stun > 0) text('휘청!', W / 2, FLOOR - 34, 10, 'f', 'center');
+  for (const m of st.msgs) text(m.s, W / 2, 46, 16, 'y', 'center');
   const T = touchMode;
-  const tips = [T ? '십자키로 날아요' : '방향키로 날아요', T ? 'A 짧게: 패스' : 'Z 짧게: 패스', T ? 'A 길게 떼면: 슛' : 'Z 길게 떼면: 슛', T ? 'B: 돌진·빼앗기' : 'X: 돌진·빼앗기'];
-  if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0) {
-    if (st.tut === 3 && st.t > 25) {} else { rect(0, 10, W, 15, 1); text(tips[st.tut], W / 2, 17, 12, 3, 'center'); }
+  const tips = [T ? '십자키로 날아 보세요' : '방향키로 날아 보세요', T ? 'A를 짧게: 동료에게 패스' : 'Z를 짧게: 동료에게 패스',
+    T ? 'A를 길게 눌렀다 떼면 슛' : 'Z를 길게 눌렀다 떼면 슛', T ? 'B: 돌진해서 공 빼앗기' : 'X: 돌진해서 공 빼앗기'];
+  if (st.tut === 3 && me.dashT > 0) st.tut = 4;
+  if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut === 3 && st.t > 25)) {
+    rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text(tips[st.tut], W / 2, 21.5, 8, 0, 'center');
   }
-  if (st.tut === 3 && st.riders[0].dashT > 0) st.tut = 4;
-  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 10, W, 15, 1); text('잡으면 +' + tune.glimmerPoints + ', 끝!', W / 2, 17, 12, 3, 'center'); }
+  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('글리머를 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
 }
+const TEAMS_SHORT = ['등불매', '폭풍까마귀'];
+function panel(x, y, w, h) { rect(x, y, w, h, '3'); rect(x + 1, y + 1, w - 2, h - 2, '0'); rect(x + 2, y + 2, w - 4, h - 4, '3'); rect(x + 3, y + 3, w - 6, h - 6, '#2a2045'); }
 function drawTitle() {
   const tNow = clock.now();
   drawWorld(((tNow * 20) % (tune.fieldWidth - W)), tNow);
-  drawSpr('usFlyer', 36 + Math.sin(tNow * 2) * 4, 52 + Math.round(Math.sin(tNow * 3) * 2));
-  drawSpr('volla', 46 + Math.sin(tNow * 2) * 4, 54 + Math.round(Math.sin(tNow * 3) * 2));
-  drawSpr('rivalFlyer', 124 + Math.sin(tNow * 2 + 1) * 4, 54 + Math.round(Math.sin(tNow * 3 + 1) * 2), true);
-  drawSpr(Math.floor(tNow * 16) % 2 ? 'glimmerA' : 'glimmerB', 80 + Math.cos(tNow * 1.7) * 22, 50 + Math.sin(tNow * 2.3) * 4);
-  rect(8, 14, W - 16, 26, 3); rect(9, 15, W - 18, 24, 2); rect(10, 16, W - 20, 22, 3);
-  text(TITLE, W / 2, 27, 16, 0, 'center');
+  panel(28, 18, W - 56, 30);
+  text(TITLE, W / 2, 33, 17, 'y', 'center');
+  drawSpr('usFlyer', 60 + Math.sin(tNow * 2) * 4, 62 + Math.round(Math.sin(tNow * 3) * 2));
+  drawSpr('volla', 70 + Math.sin(tNow * 2) * 4, 64 + Math.round(Math.sin(tNow * 3) * 2));
+  drawSpr('rivalFlyer', 196 + Math.sin(tNow * 2 + 1) * 4, 64 + Math.round(Math.sin(tNow * 3 + 1) * 2), true);
+  drawSpr(Math.floor(tNow * 16) % 2 ? 'glimmerA' : 'glimmerB', 128 + Math.cos(tNow * 1.7) * 30, 60 + Math.sin(tNow * 2.3) * 5);
   const lines = touchMode ? TOUCH_CONTROLS : CONTROLS;
-  const y0 = 128 - lines.length * 13;
-  rect(16, y0 - 4, W - 32, lines.length * 13 + 5, 3); rect(17, y0 - 3, W - 34, lines.length * 13 + 3, 0);
-  lines.forEach((l, i) => text(l, 24, y0 + 4 + i * 13, 12, 3));
-  if (Math.floor(tNow * 2) % 2 === 0) text(touchMode ? '눌러서 시작' : 'Enter로 시작', W / 2, 136, 12, 0, 'center', 3);
+  const y0 = 80;
+  panel(24, y0, W - 48, lines.length * 11 + 10);
+  lines.forEach((l, i) => text(l, 36, y0 + 10 + i * 11, 8, 0, 'left', -1));
+  if (Math.floor(tNow * 2) % 2 === 0) text(touchMode ? '화면이나 START를 눌러 시작' : 'Enter를 눌러 시작', W / 2, 148, 10, 'w', 'center');
 }
 
 // ---- Scenes ------------------------------------------------------------------------------------
@@ -849,13 +853,13 @@ const scenes = {
   figures: {
     update(dt) { state.t += dt; },
     draw() {
-      clear(0);
-      rect(0, 0, W, 12, 3); text('선수와 공', W / 2, 6, 11, 0, 'center');
-      const items = [['usFlyer', '우리 선수'], ['usKeeper', '우리 키퍼'], ['volla', '볼라'],
-        ['rivalFlyer', '상대 선수'], ['rivalKeeper', '상대 키퍼'], ['rumbler', '럼블러'], ['glimmerA', '글리머']];
+      clear('#8cc8f2'); rect(0, 0, W, 16, '3'); text('스카이훅 포켓의 선수와 공', W / 2, 8, 9, 'y', 'center', -1);
+      const items = [['usFlyer', '등불매 선수'], ['usKeeper', '등불매 키퍼'], ['volla', '볼라'], ['glimmerA', '글리머'],
+        ['rivalFlyer', '까마귀 선수'], ['rivalKeeper', '까마귀 키퍼'], ['rumbler', '럼블러']];
       items.forEach(([s, n], i) => {
-        const col = i % 3, row = Math.floor(i / 3), x = 28 + col * 52, y = 30 + row * 42;
-        drawSpr(s, x, y); text(n, x, y + 15, 11, 3, 'center');
+        const colN = i % 4, row = Math.floor(i / 4), x = 34 + colN * 63, y = 50 + row * 56;
+        const c = sprite(s, false); ctx.drawImage(c, 0, 0, c.width, c.height, Math.round(x - c.width), Math.round(y - c.height), c.width * 2, c.height * 2);
+        text(n, x, y + 22, 8, 0, 'center');
       });
     },
   },
@@ -873,9 +877,9 @@ const scenes = {
   pause: {
     update() { if (startHit()) scene = 'play'; },
     draw() {
-      drawPlay(1); dither(0, 11, W, H - 11, 3, 2);
-      rect(30, 56, 100, 32, 3); rect(31, 57, 98, 30, 0);
-      text('일시정지', W / 2, 66, 13, 3, 'center'); text(touchMode ? 'START: 계속' : 'Enter: 계속', W / 2, 80, 11, 2, 'center');
+      drawPlay(1); dither(0, 15, W, H - 15, '3', 2);
+      panel(68, 58, 120, 42);
+      text('일시정지', W / 2, 72, 13, 'y', 'center'); text(touchMode ? 'START를 누르면 계속' : 'Enter를 누르면 계속', W / 2, 88, 8, 0, 'center', -1);
     },
   },
   results: {
@@ -887,15 +891,14 @@ const scenes = {
     },
     draw() {
       drawPlay(1);
-      rect(14, 22, W - 28, 100, 3); rect(15, 23, W - 30, 98, 0); rect(17, 25, W - 34, 94, 3); rect(18, 26, W - 36, 92, 0);
+      panel(40, 24, W - 80, 116);
       const st = state, head = st.winner === 0 ? '승리!' : st.winner === 1 ? '패배' : '무승부';
-      text(head, W / 2, 40, 18, 3, 'center');
-      text(st.gained.replace(/^\S+\s/, ''), W / 2, 56, 11, 3, 'center');
-      drawSpr('hawk', 50, 72); drawSpr('crow', 110, 72, true);
-      digits(st.score[0], 64, 69, 3, 2); digits(st.score[1], 96, 69, 3, 2, 'right'); rect(79, 72, 2, 2, 3);
-      text(`골 ${st.stats.goals} · 빼앗기 ${st.stats.steals}`, W / 2, 88, 11, 3, 'center');
-      text(`완벽 ${st.stats.perfect} · 맞음 ${st.stats.hits}`, W / 2, 100, 11, 3, 'center');
-      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? '눌러서 다시' : 'Enter: 다시', W / 2, 112, 11, 2, 'center');
+      text(head, W / 2, 42, 18, st.winner === 0 ? 'y' : st.winner === 1 ? '#9fd0e8' : 'w', 'center');
+      text(st.gained.replace(/^\S+\s/, ''), W / 2, 60, 9, 0, 'center', -1);
+      drawSpr('hawk', 84, 80); drawSpr('crow', 172, 80, true);
+      digits(st.score[0], 120, 74, 'o', 3, 'right'); digits(st.score[1], 136, 74, 't', 3, 'left'); rect(127, 78, 2, 2, '0'); rect(127, 84, 2, 2, '0');
+      text(`골 ${st.stats.goals} · 완벽한 슛 ${st.stats.perfect} · 빼앗기 ${st.stats.steals} · 맞음 ${st.stats.hits}`, W / 2, 104, 8, 0, 'center', -1);
+      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? '눌러서 다시 하기' : 'Enter를 눌러 다시 하기', W / 2, 124, 10, 'w', 'center');
     },
   },
 };
@@ -914,6 +917,7 @@ function tick() {
   drawFrame();
 }
 function drawFrame() {
+  hudClear(); shakeX = 0;
   scenes[scene].draw();
   const mb = document.getElementById('bMute'); if (mb) mb.textContent = muted ? '소리 꺼짐' : '소리';
 }
