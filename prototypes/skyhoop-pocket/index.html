@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>스카이훅 포켓</title>
+<title>퀴디치 포켓</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none;
     background: radial-gradient(circle at 50% 30%, #2d2350, #120a24 70%);
@@ -61,7 +61,7 @@
 <div id="device">
   <div id="bezel"><div class="led"></div>
     <div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
-    <div class="brand">SKYHOOP <b>POCKET</b></div></div>
+    <div class="brand">QUIDDITCH <b>POCKET</b></div></div>
   <div id="pad">
     <div class="dpad" id="dpad"><div class="arm h"></div><div class="arm v"></div><div class="hub"></div>
       <div class="tip up"></div><div class="tip dn"></div><div class="tip lf"></div><div class="tip rt"></div></div>
@@ -75,20 +75,20 @@
 <script src="config.js"></script>
 <script>
 'use strict';
-// 스카이훅 포켓: a side-view broom sky sport in colourful pixel art.
-// The pixel world is drawn at 256x160 on #game and scaled up crisply; all text is drawn on #hud
+// 퀴디치 포켓: a side-view broom sky sport in colourful pixel art.
+// The pixel world is drawn at 208x160 on #game and scaled up crisply; all text is drawn on #hud
 // at the screen's own resolution, so letters stay sharp while the art stays pixels.
 
 // ---- Built to be checked ----------------------------------------------------------------
 const params = new URLSearchParams(location.search);
 const tune = new Proxy({}, { get: (_, k) => CONFIG[k].value }); // live: tune.speed is CONFIG.speed.value
 const STEP = 1 / 60;            // simulation step in seconds; motion is per second, never per frame
-const W = 256, H = 160;         // the pixel screen
+const W = 208, H = 160;         // the pixel screen: a close view, so riders read large on a phone
 const PIXEL = true;             // crisp scale, no smoothing
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif';
-const TITLE = '스카이훅 포켓';
-const CONTROLS = ['방향키 / WASD: 이동', 'Z 짧게: 패스 · 길게 눌렀다 떼기: 슛', 'X: 돌진해서 빼앗기', 'Enter: 일시정지 · M: 소리'];
-const TOUCH_CONTROLS = ['십자키: 이동', 'A 짧게: 패스 · 길게 눌렀다 떼기: 슛', 'B: 돌진해서 빼앗기', 'START: 일시정지'];
+const TITLE = '퀴디치 포켓';
+const CONTROLS = ['방향키 / WASD: 이동', 'Z: 짧게 패스, 길게 눌렀다 떼면 슛', 'X: 돌진해서 빼앗기', 'Enter: 일시정지 · M: 소리'];
+const TOUCH_CONTROLS = ['십자키: 이동', 'A: 짧게 패스, 길게 눌렀다 떼면 슛', 'B: 돌진해서 빼앗기', 'START: 일시정지'];
 const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
 const CHEAP = params.get('render') === 'cheap';
 let seed;
@@ -105,7 +105,7 @@ const events = []; // window.game.events: anything the game wants a run to see
 const P = ['#fff4dc', '#bfe6fa', '#3b6a8a', '#1a1030'];
 const COL = {
   '0': '#fff4dc', '1': '#bfe6fa', '2': '#3b6a8a', '3': '#1a1030',
-  o: '#f08a3c', O: '#b4502a', t: '#3fb6a8', T: '#1f5f63', p: '#2a2040', s: '#f2c29a',
+  o: '#d0343c', O: '#7e1e26', t: '#2f9a5a', T: '#1d5a36', p: '#2a2040', s: '#f2c29a',
   r: '#d2412f', R: '#7e2424', y: '#ffd84a', Y: '#c58a1c', w: '#ffffff', b: '#7a4a2a', h: '#e6b85c', g: '#8a86a0', f: '#ff8a2a',
 };
 const col = c => typeof c === 'number' ? P[c] : (COL[c] || c);
@@ -126,8 +126,8 @@ function fit() {
   let Dw, Dh, side = 0;
   if (wide) { Dh = Math.min(ih, 640); Dw = Math.min(iw, Dh * 2.3); side = Math.min(Dw * 0.2, Dh * 0.46); }
   else { Dw = Math.min(iw, ih * 0.62, 540); Dh = Math.min(ih, Dw * 1.85); }
-  const rim = wide ? Dh * 0.05 : Dw * 0.05, bp = Math.max(10, Dw * (wide ? 0.012 : 0.035)), brandH = Math.max(18, (wide ? Dh : Dw) * 0.06);
-  const maxW = wide ? Dw - 2 * side - 2 * bp : Dw - 2 * rim - 2 * bp - 8;
+  const rim = wide ? Dh * 0.04 : Dw * 0.03, bp = wide ? Math.max(8, Dw * 0.01) : Math.max(6, Dw * 0.02), brandH = Math.max(16, (wide ? Dh : Dw) * 0.05);
+  const maxW = wide ? Dw - 2 * side - 2 * bp : Dw - 2 * rim - 2 * bp;
   const maxH = wide ? Dh - 2 * rim - 2 * bp - brandH : Dh * 0.5;
   const k = Math.min(maxW / W, maxH / H);
   // CSS pixels per art pixel: a whole number of device pixels, unless the screen is so dense
@@ -135,7 +135,7 @@ function fit() {
   const s = k * dpr >= 3 ? k : Math.max(1, Math.floor(k * dpr)) / dpr;
   const cw = Math.round(W * s), ch = Math.round(H * s);
   place(deviceEl, (iw - Dw) / 2, (ih - Dh) / 2, Dw, Dh);
-  const bw = cw + 2 * bp + (wide ? 0 : 8), bh = ch + 2 * bp + brandH;
+  const bw = cw + 2 * bp, bh = ch + 2 * bp + brandH;
   const bx = (Dw - bw) / 2, by = wide ? (Dh - bh) / 2 : rim;
   place(bezelEl, bx, by, bw, bh);
   place(screenEl, (bw - cw) / 2, bp, cw, ch);
@@ -192,10 +192,10 @@ function digits(s, x, y, c = 3, scale = 1, align = 'left') {
 
 // ---- Sprites: rows of colour letters (see COL), '.' is see-through; drawn facing right -----
 const SPR = {
-  usFlyer: [ // 등불매: an orange hood, a short wing cape
+  usFlyer: [ // 그리핀도르: an orange hood, a short wing cape
     '......333', '.....3ooo3', '....3ooooo3', '....3oss3o3', '....3osss3', '.O...3oo3', '.OO.3oooos3',
     '.OOo3oooo0s3', '..3ooooo3', '..3oooo3', 'hhhhbbbbbbbbbbb', 'h.h.3..3', '....33'],
-  rivalFlyer: [ // 폭풍까마귀: a pointed hat and a gold beak
+  rivalFlyer: [ // 슬리데린: a pointed hat and a gold beak
     '.......3', '......3p3', '.....3pp3', '....3ppp3', '...3333333', '....3tss3', '....3s3sYY',
     '.T..3sss3', '.TT3ttttt3', '..3tttt0t3', '.3ttttt3', 'hhhhbbbbbbbbbbb', 'h.h.3..3', '....33'],
   usKeeper: [ // big cream gloves
@@ -273,6 +273,11 @@ canvas.addEventListener('pointerdown', e => { // a tap on the screen starts and 
   if (scene === 'title' || scene === 'results' || scene === 'pause') hit.add('Enter');
 });
 addEventListener('contextmenu', e => e.preventDefault());
+// iPhone Safari ignores the viewport's zoom lock: stop double-tap and pinch zoom here
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastTouchEnd < 350) e.preventDefault(); lastTouchEnd = now; }, { passive: false });
+document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend', 'dblclick']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
 fit();
 
 // ---- Audio: square-wave beeps, started on first input, mute on M ----------------------------
@@ -314,7 +319,7 @@ const SFX = {
 // ---- The match state ------------------------------------------------------------------
 // Pitch: x from 0 to fieldWidth, y from the top of the sky (TOP) to the turf (FLOOR).
 const TOP = 16, FLOOR = 134, MID = 78, HOOP_Y = [54, 78, 102];
-const hoopX = side => side > 0 ? tune.fieldWidth - 16 : 16; // side +1: the right end, which 등불매 attacks
+const hoopX = side => side > 0 ? tune.fieldWidth - 16 : 16; // side +1: the right end, which 그리핀도르 attacks
 let scene, state;
 function mkRider(id, team, role, x, y) {
   return { id, team, role, x, y, px: x, py: y, vx: 0, vy: 0, face: team === 0 ? 1 : -1, stun: 0, dashT: 0, dashCd: 0,
@@ -542,7 +547,7 @@ function updateRumblers(dt) {
       events.push({ type: 'hit', rider: r.id, t: state.t });
       if (Math.abs(r.x - R[0].x) < 100) { SFX.thud(); state.shake = Math.max(state.shake, 0.15); }
       if (b.holder === r.id) { release(r); b.mode = 'free'; b.vx = (rng() - 0.5) * 60; b.vy = -40 - rng() * 20; if (r.team === 1) msg('상대가 공을 놓쳤다!', 1.2); }
-      if (r.id === 0) { msg('방해공에 맞았다!', 1.2); state.charging = false; }
+      if (r.id === 0) { msg('블러저에 맞았다!', 1.2); state.charging = false; }
       rb.vx = -rb.vx * 0.6; rb.vy = -50; rb.rest = tune.rumblerRest; rb.target = -1;
       break;
     }
@@ -557,7 +562,7 @@ function updateGlimmer(dt) {
       let gx = 0, best = -1; // appear where no flyer is close
       for (let k = 0; k < 8; k++) { const x = 20 + rng() * (tune.fieldWidth - 40), d = Math.min(...R.filter(r => r.role === 'flyer').map(r => Math.abs(r.x - x))); if (d > best) { best = d; gx = x; } }
       g.active = true; g.x = gx; g.y = TOP + 14; g.px = g.x; g.py = g.y; g.turnT = 0;
-      state.glimmerNote = 3.5; SFX.bell(); msg('황금공 등장!', 2); events.push({ type: 'glimmer', t: state.t });
+      state.glimmerNote = 3.5; SFX.bell(); msg('골든 스니치 등장!', 2); events.push({ type: 'glimmer', t: state.t });
     }
     return;
   }
@@ -594,7 +599,7 @@ function finish(reason) {
   const [a, b] = state.score;
   state.over = true; state.endReason = reason; state.winner = a > b ? 0 : b > a ? 1 : -1;
   const head = state.winner === 0 ? '승리!' : state.winner === 1 ? '패배' : '무승부';
-  const how = reason === 'mine' ? '우리가 황금공를 잡았다' : reason === 'theirs' ? '상대가 황금공를 잡았다' : '시간 종료';
+  const how = reason === 'mine' ? '우리가 골든 스니치를 잡았다' : reason === 'theirs' ? '상대가 골든 스니치를 잡았다' : '시간 종료';
   state.gained = head + ' ' + how; state.resultsT = 0;
   events.push({ type: 'end', winner: state.winner, reason, score: [a, b], t: state.t });
   if (state.winner === 0) SFX.win(); else SFX.lose();
@@ -749,7 +754,7 @@ function drawWorld(cam, tNow) {
   SKY.forEach((c, i) => { rect(0, i * bandH, W, bandH, c); if (i) dither(0, i * bandH - 2, W, 2, SKY[i - 1]); });
   // the sun and far clouds drift slower than the pitch
   const pc = Math.round(cx * 0.2), pt = Math.round(cx * 0.5);
-  const sx = 200 - Math.round(cx * 0.05);
+  const sx = Math.round(W * 0.78) - Math.round(cx * 0.05);
   rect(sx - 6, 24, 12, 12, '#fff2b0'); rect(sx - 8, 26, 16, 8, '#fff2b0'); rect(sx - 4, 22, 8, 16, '#fff2b0'); rect(sx - 4, 26, 8, 8, '#ffffff');
   for (let i = 0; i < 7; i++) {
     const x = ((i * 83 - pc) % 340 + 340) % 340 - 50, y = 22 + (i * 17) % 30;
@@ -762,7 +767,7 @@ function drawWorld(cam, tNow) {
   }
   for (let i = 0; i < 10; i++) {
     const x = ((i * 61 - pt) % 420 + 420) % 420 - 70, h = 40 + (i * 7) % 18, y = FLOOR - h;
-    const roof = i % 2 ? '#d8692e' : '#2f8f86', flag = i % 2 ? 'o' : 't';
+    const roof = i % 2 ? '#c8323a' : '#2f9a5a', flag = i % 2 ? 'o' : 't';
     rect(x, y, 12, h, '#cdb89c'); rect(x + 9, y, 3, h, '#a8937a'); rect(x - 1, y - 1, 14, 2, '#8a7a66');
     rect(x, y - 8, 12, 7, roof); rect(x + 2, y - 12, 8, 4, roof); rect(x + 4, y - 15, 4, 3, roof); rect(x + 5, y - 19, 1, 4, '3');
     rect(x + 6, y - 19, 6, 3, flag);
@@ -844,14 +849,14 @@ function drawHUD() {
   const st = state;
   rect(0, 0, W, 14, '3'); rect(0, 14, W, 1, '#3b2f5c');
   drawSpr('hawk', 8, 7); drawSpr('crow', W - 8, 7, true);
-  text(TEAMS_SHORT[0] + ' ' + st.score[0], 15, 7.5, 8, 'o', 'left', -1);
-  text(st.score[1] + ' ' + TEAMS_SHORT[1], W - 15, 7.5, 8, 't', 'right', -1);
+  text(TEAMS_SHORT[0] + ' ' + st.score[0], 15, 7, 8, 'y', 'left', -1);
+  text(st.score[1] + ' ' + TEAMS_SHORT[1], W - 15, 7, 8, '#9fe0b0', 'right', -1);
   const left = Math.max(0, Math.ceil(tune.matchTime - st.t)), mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
-  if (!(left <= 10 && Math.floor(st.t * 4) % 2 === 0)) text(`${mm}:${ss}`, W / 2, 7.5, 9, 0, 'center', -1);
+  if (!(left <= 10 && Math.floor(st.t * 4) % 2 === 0)) text(`${mm}:${ss}`, W / 2, 6.5, 9, 0, 'center', -1);
   if (!st.glimmer.active) { // a bar filling toward the glimmer
-    const f = clamp(st.t / tune.glimmerAt, 0, 1); rect(W / 2 + 18, 5, 22, 4, '#3b2f5c'); rect(W / 2 + 18, 5, Math.round(22 * f), 4, 'y'); drawSpr('glimmerB', W / 2 + 46, 7);
+    const f = clamp(st.t / tune.glimmerAt, 0, 1); rect(W / 2 - 16, 12, 32, 2, '#3b2f5c'); rect(W / 2 - 16, 12, Math.round(32 * f), 2, 'y');
   }
-  if (trailing(0) && Math.floor(st.t * 3) % 2 === 0) { rect(W / 2 - 40, 3, 1, 8, 'y'); rect(W / 2 - 41, 4, 3, 1, 'y'); rect(W / 2 - 42, 5, 5, 1, 'y'); } // the catch-up arrow
+  if (trailing(0) && Math.floor(st.t * 3) % 2 === 0) { rect(W / 2 - 22, 3, 1, 7, 'y'); rect(W / 2 - 23, 4, 3, 1, 'y'); rect(W / 2 - 24, 5, 5, 1, 'y'); } // the catch-up arrow
   const me = st.riders[0];
   if (st.charging) { // the charge meter with its perfect window
     const c = clamp(st.holdT / tune.chargeTime, 0, 1), x0 = W / 2 - 40, y0 = FLOOR - 18;
@@ -870,23 +875,23 @@ function drawHUD() {
   if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut === 3 && st.t > 25)) {
     rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text(tips[st.tut], W / 2, 21.5, 8, 0, 'center');
   }
-  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('황금공를 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
+  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('골든 스니치를 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
 }
-const TEAMS_SHORT = ['등불매', '폭풍까마귀'];
+const TEAMS_SHORT = ['그리핀도르', '슬리데린'];
 function panel(x, y, w, h) { rect(x, y, w, h, '3'); rect(x + 1, y + 1, w - 2, h - 2, '0'); rect(x + 2, y + 2, w - 4, h - 4, '3'); rect(x + 3, y + 3, w - 6, h - 6, '#2a2045'); }
 function drawTitle() {
   const tNow = clock.now();
   drawWorld(((tNow * 20) % (tune.fieldWidth - W)), tNow);
-  panel(28, 18, W - 56, 30);
+  panel(16, 18, W - 32, 30);
   text(TITLE, W / 2, 33, 17, 'y', 'center');
-  drawSpr('usFlyer', 60 + Math.sin(tNow * 2) * 4, 62 + Math.round(Math.sin(tNow * 3) * 2));
-  drawSpr('volla', 70 + Math.sin(tNow * 2) * 4, 64 + Math.round(Math.sin(tNow * 3) * 2));
-  drawSpr('rivalFlyer', 196 + Math.sin(tNow * 2 + 1) * 4, 64 + Math.round(Math.sin(tNow * 3 + 1) * 2), true);
-  drawSpr(Math.floor(tNow * 16) % 2 ? 'glimmerA' : 'glimmerB', 128 + Math.cos(tNow * 1.7) * 30, 60 + Math.sin(tNow * 2.3) * 5);
+  drawSpr('usFlyer', 46 + Math.sin(tNow * 2) * 4, 62 + Math.round(Math.sin(tNow * 3) * 2));
+  drawSpr('volla', 56 + Math.sin(tNow * 2) * 4, 64 + Math.round(Math.sin(tNow * 3) * 2));
+  drawSpr('rivalFlyer', W - 52 + Math.sin(tNow * 2 + 1) * 4, 64 + Math.round(Math.sin(tNow * 3 + 1) * 2), true);
+  drawSpr(Math.floor(tNow * 16) % 2 ? 'glimmerA' : 'glimmerB', W / 2 + Math.cos(tNow * 1.7) * 24, 60 + Math.sin(tNow * 2.3) * 5);
   const lines = touchMode ? TOUCH_CONTROLS : CONTROLS;
   const y0 = 80;
-  panel(24, y0, W - 48, lines.length * 11 + 10);
-  lines.forEach((l, i) => text(l, 36, y0 + 10 + i * 11, 8, 0, 'left', -1));
+  panel(12, y0, W - 24, lines.length * 11 + 10);
+  lines.forEach((l, i) => text(l, 22, y0 + 10 + i * 11, 8, 0, 'left', -1));
   if (Math.floor(tNow * 2) % 2 === 0) text(touchMode ? '화면이나 START를 눌러 시작' : 'Enter를 눌러 시작', W / 2, 148, 10, 'w', 'center');
 }
 
@@ -895,13 +900,13 @@ const scenes = {
   figures: {
     update(dt) { state.t += dt; },
     draw() {
-      clear('#8cc8f2'); rect(0, 0, W, 16, '3'); text('스카이훅 포켓의 선수와 공', W / 2, 8, 9, 'y', 'center', -1);
-      const items = [['usFlyer', '등불매 선수'], ['usKeeper', '등불매 키퍼'], ['volla', '득점공'], ['glimmerA', '황금공'],
-        ['rivalFlyer', '까마귀 선수'], ['rivalKeeper', '까마귀 키퍼'], ['rumbler', '방해공']];
-      items.forEach(([s, n], i) => {
-        const colN = i % 4, row = Math.floor(i / 4), x = 34 + colN * 63, y = 50 + row * 56;
+      clear('#8cc8f2'); rect(0, 0, W, 16, '3'); text('퀴디치 포켓의 선수와 공', W / 2, 8, 9, 'y', 'center', -1);
+      const items = [['usFlyer', '그리핀도르', '추격꾼'], ['usKeeper', '그리핀도르', '파수꾼'], ['volla', '퀘이플', ''],
+        ['rivalFlyer', '슬리데린', '추격꾼'], ['rivalKeeper', '슬리데린', '파수꾼'], ['rumbler', '블러저', ''], ['glimmerA', '골든 스니치', '']];
+      items.forEach(([s, n1, n2], i) => {
+        const colN = i % 3, row = Math.floor(i / 3), x = 36 + colN * 68, y = 38 + row * 44;
         const c = sprite(s, false); ctx.drawImage(c, 0, 0, c.width, c.height, Math.round(x - c.width), Math.round(y - c.height), c.width * 2, c.height * 2);
-        text(n, x, y + 22, 8, 0, 'center');
+        text(n1, x, y + 18, 8, 0, 'center'); if (n2) text(n2, x, y + 27, 8, 'y', 'center');
       });
     },
   },
@@ -920,7 +925,7 @@ const scenes = {
     update() { if (startHit()) scene = 'play'; },
     draw() {
       drawPlay(1); dither(0, 15, W, H - 15, '3', 2);
-      panel(68, 58, 120, 42);
+      panel(W / 2 - 60, 58, 120, 42);
       text('일시정지', W / 2, 72, 13, 'y', 'center'); text(touchMode ? 'START를 누르면 계속' : 'Enter를 누르면 계속', W / 2, 88, 8, 0, 'center', -1);
     },
   },
@@ -933,14 +938,15 @@ const scenes = {
     },
     draw() {
       drawPlay(1);
-      panel(40, 24, W - 80, 116);
+      panel(14, 22, W - 28, 120);
       const st = state, head = st.winner === 0 ? '승리!' : st.winner === 1 ? '패배' : '무승부';
       text(head, W / 2, 42, 18, st.winner === 0 ? 'y' : st.winner === 1 ? '#9fd0e8' : 'w', 'center');
       text(st.gained.replace(/^\S+\s/, ''), W / 2, 60, 9, 0, 'center', -1);
-      drawSpr('hawk', 84, 80); drawSpr('crow', 172, 80, true);
-      digits(st.score[0], 120, 74, 'o', 3, 'right'); digits(st.score[1], 136, 74, 't', 3, 'left'); rect(127, 78, 2, 2, '0'); rect(127, 84, 2, 2, '0');
-      text(`골 ${st.stats.goals} · 완벽한 슛 ${st.stats.perfect} · 빼앗기 ${st.stats.steals} · 맞음 ${st.stats.hits}`, W / 2, 104, 8, 0, 'center', -1);
-      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? '눌러서 다시 하기' : 'Enter를 눌러 다시 하기', W / 2, 124, 10, 'w', 'center');
+      drawSpr('hawk', W / 2 - 50, 80); drawSpr('crow', W / 2 + 50, 80, true);
+      digits(st.score[0], W / 2 - 8, 74, 'y', 3, 'right'); digits(st.score[1], W / 2 + 8, 74, '#9fe0b0', 3, 'left'); rect(W / 2 - 1, 78, 2, 2, '0'); rect(W / 2 - 1, 84, 2, 2, '0');
+      text(`골 ${st.stats.goals} · 완벽한 슛 ${st.stats.perfect}`, W / 2, 101, 8, 0, 'center', -1);
+      text(`빼앗기 ${st.stats.steals} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
+      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? '눌러서 다시 하기' : 'Enter를 눌러 다시 하기', W / 2, 130, 10, 'w', 'center');
     },
   },
 };

@@ -25,7 +25,7 @@ window.CONFIG = {
   dashCooldown: { value: 0.75, min: 0.1, max: 3, step: 0.05 }, // s
   catchUpMult: { value: 1.1, min: 1, max: 1.5, step: 0.02 }, // x speed for the trailing team, until level
 
-  // ---- The ball (득점공), passes and shots ----
+  // ---- The ball (퀘이플), passes and shots ----
   catchRadius: { value: 8, min: 3, max: 16, step: 1 },       // px
   carryImmunity: { value: 0.7, min: 0, max: 3, step: 0.05 }, // s a new carrier cannot be robbed
   kickoffGrace: { value: 3, min: 0, max: 10, step: 0.5 },    // s the opening carrier cannot be robbed
@@ -70,7 +70,7 @@ window.CONFIG = {
   seekerLag: { value: 0.45, min: 0.05, max: 2, step: 0.05 },   // s a rival's glimmer chase looks late
   rivalSeekerSpeed: { value: 0.9, min: 0.3, max: 1.5, step: 0.05 }, // x flySpeed chasing the glimmer
 
-  // ---- Rumblers (방해공) ----
+  // ---- Rumblers (블러저) ----
   rumblerSpeedStart: { value: 48, min: 10, max: 160, step: 2 }, // px/s
   rumblerSpeedEnd: { value: 74, min: 10, max: 200, step: 2 },   // px/s at full strength
   rumblerTurn: { value: 1.8, min: 0.2, max: 6, step: 0.1 },     // rad/s homing
@@ -80,7 +80,7 @@ window.CONFIG = {
   rumblerHit: { value: 8, min: 3, max: 16, step: 1 },           // px
   stunTime: { value: 1.0, min: 0.2, max: 3, step: 0.1 },        // s a hit rider wobbles
 
-  // ---- The glimmer (황금공) ----
+  // ---- The glimmer (골든 스니치) ----
   glimmerSpeed: { value: 82, min: 20, max: 200, step: 2 },      // px/s
   glimmerDart: { value: 1.9, min: 1, max: 3, step: 0.05 },      // x speed in a dart
   glimmerTurnEvery: { value: 1.1, min: 0.2, max: 4, step: 0.1 }, // s between heading changes
