@@ -1,1 +1,2 @@
 iteration 1	게임보이 4색 → 알록달록한 도트(256x160), 글자를 도트에서 화면 해상도의 또렷한 글자로, 휴대폰에서 화면을 가로 꽉 차게	errors: none	evidence/iteration-1-play.png evidence/iteration-1-title-phone.png evidence/iteration-1-title-small.png evidence/iteration-1-figures.png
+iteration 2	이름을 쉬운 말로(득점공·방해공·황금공), 게임기 모양 틀(세로·가로·컴퓨터), 깃허브 페이지용 play/ 폴더	errors: none	evidence/iteration-2-play.png evidence/iteration-2-shell-phone.png evidence/iteration-2-shell-phoneland.png evidence/iteration-2-shell-desk.png

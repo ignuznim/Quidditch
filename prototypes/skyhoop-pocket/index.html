@@ -10,56 +10,67 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>스카이훅 포켓</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #1a1030; overflow: hidden; touch-action: none;
-    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none;
+    background: radial-gradient(circle at 50% 30%, #2d2350, #120a24 70%);
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none;
+    font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif; }
   body { font-variant-numeric: tabular-nums; }
-  #screen { position: relative; margin: 0 auto; }
+  /* The handheld: our own console shell around the game, with its buttons wired to the game's keys */
+  #device { position: absolute; border-radius: 26px; touch-action: none;
+    background: linear-gradient(160deg, #6a58c4 0%, #5546a8 45%, #43378c 100%);
+    box-shadow: inset 0 3px 0 rgba(255,255,255,0.25), inset 0 -6px 0 rgba(0,0,0,0.25), 0 18px 40px rgba(0,0,0,0.55); }
+  #bezel { position: absolute; background: #241e3d; border-radius: 14px 14px 30px 14px;
+    box-shadow: inset 0 0 0 2px #15102a, inset 0 4px 10px rgba(0,0,0,0.5); }
+  #bezel .led { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #ff5a5a; box-shadow: 0 0 8px #ff5a5a; }
+  #bezel .brand { position: absolute; left: 0; right: 0; text-align: center; color: #cfc6ff; font-weight: 900;
+    font-style: italic; letter-spacing: 0.08em; white-space: nowrap; }
+  #bezel .brand b { color: #ffd84a; }
+  #screen { position: absolute; background: #000; box-shadow: 0 0 0 2px #0c0818; }
   #screen canvas { display: block; position: absolute; left: 0; top: 0; touch-action: none; }
   #game { image-rendering: pixelated; image-rendering: crisp-edges; }
   #hud { pointer-events: none; }
-  #pad { position: fixed; left: 0; right: 0; bottom: 0; height: 0; display: none; touch-action: none;
-    font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif; }
-  body.touch #pad { display: block; }
-  .dpad { position: absolute; width: 150px; height: 150px; left: 22px; bottom: 40px; }
-  .dpad .arm { position: absolute; background: #3b2f5c; border: 3px solid #120a24; border-radius: 6px; }
+  #pad { position: absolute; inset: 0; pointer-events: none; }
+  #pad > * { pointer-events: auto; }
+  .dpad { position: absolute; width: 150px; height: 150px; transform-origin: 0 0; }
+  .dpad .arm { position: absolute; background: #2a2440; border: 3px solid #120a24; border-radius: 7px; box-shadow: 0 4px 0 #120a24; }
   .dpad .h { left: 0; top: 50px; width: 144px; height: 44px; }
   .dpad .v { left: 50px; top: 0; width: 44px; height: 144px; }
-  .dpad .hub { position: absolute; left: 61px; top: 61px; width: 28px; height: 28px; border-radius: 50%; background: #2a2045; }
+  .dpad .hub { position: absolute; left: 59px; top: 59px; width: 32px; height: 32px; border-radius: 50%; background: #1d1833; }
   .dpad .tip { position: absolute; width: 0; height: 0; border: 9px solid transparent; }
-  .dpad .up { left: 63px; top: 8px; border-bottom-color: #ffd84a; }
-  .dpad .dn { left: 63px; bottom: 8px; border-top-color: #ffd84a; }
-  .dpad .lf { left: 8px; top: 63px; border-right-color: #ffd84a; }
-  .dpad .rt { right: 8px; top: 63px; border-left-color: #ffd84a; }
-  .dpad.on-up .up { border-bottom-color: #ffffff; } .dpad.on-dn .dn { border-top-color: #ffffff; }
-  .dpad.on-lf .lf { border-right-color: #ffffff; } .dpad.on-rt .rt { border-left-color: #ffffff; }
-  .btn { position: absolute; border-radius: 50%; border: 3px solid #120a24; color: #fff4dc;
-    display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 4px 0 #120a24; }
-  .btn.down { transform: translateY(3px); box-shadow: 0 1px 0 #120a24; filter: brightness(1.25); }
-  .btn small { display: block; font-size: 11px; font-weight: 700; opacity: 0.95; }
-  .btn span { text-align: center; line-height: 1.05; }
-  #bA { width: 78px; height: 78px; right: 22px; bottom: 92px; font-size: 26px; background: #e06a2c; }
-  #bB { width: 64px; height: 64px; right: 110px; bottom: 42px; font-size: 22px; background: #2a8f86; }
-  .pill { position: absolute; bottom: 10px; height: 22px; padding: 0 12px; border-radius: 11px; background: #3b2f5c;
-    border: 2px solid #120a24; color: #fff4dc; font-size: 12px; font-weight: 700; display: flex; align-items: center; }
-  .pill.down { background: #ffd84a; color: #1a1030; }
-  #bStart { left: 50%; transform: translateX(4px); }
-  #bMute { left: 50%; transform: translateX(-84px); }
-  @media (orientation: landscape) {
-    body.touch .dpad { bottom: 50%; margin-bottom: -75px; }
-    body.touch #bA { bottom: 50%; margin-bottom: -10px; }
-    body.touch #bB { bottom: 50%; margin-bottom: -82px; }
-  }
+  .dpad .up { left: 63px; top: 8px; border-bottom-color: #8f86c0; }
+  .dpad .dn { left: 63px; bottom: 8px; border-top-color: #8f86c0; }
+  .dpad .lf { left: 8px; top: 63px; border-right-color: #8f86c0; }
+  .dpad .rt { right: 8px; top: 63px; border-left-color: #8f86c0; }
+  .dpad.on-up .up { border-bottom-color: #ffd84a; } .dpad.on-dn .dn { border-top-color: #ffd84a; }
+  .dpad.on-lf .lf { border-right-color: #ffd84a; } .dpad.on-rt .rt { border-left-color: #ffd84a; }
+  .btn { position: absolute; border-radius: 50%; border: 3px solid #120a24; color: #fff4dc; background: #d8456a;
+    display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 5px 0 #120a24; }
+  .btn.down { transform: translateY(4px); box-shadow: 0 1px 0 #120a24; filter: brightness(1.2); }
+  .btn span { text-align: center; line-height: 1; }
+  .btn small { display: block; font-size: 0.42em; font-weight: 700; margin-top: 2px; }
+  #bB { background: #c23a5e; }
+  .pill { position: absolute; height: 18px; width: 56px; border-radius: 9px; background: #2a2440; border: 2px solid #120a24;
+    transform: rotate(-22deg); box-shadow: 0 3px 0 #120a24; }
+  .pill.down { background: #ffd84a; transform: rotate(-22deg) translateY(2px); box-shadow: 0 1px 0 #120a24; }
+  .pill-label { position: absolute; color: #d8d0ff; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; pointer-events: none; }
+  .grille { position: absolute; pointer-events: none !important;
+    background: radial-gradient(circle, #2c2358 38%, transparent 42%) 0 0 / 12px 12px; opacity: 0.9; border-radius: 8px; }
 </style>
 </head>
 <body>
-<div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
-<div id="pad">
-  <div class="dpad" id="dpad"><div class="arm h"></div><div class="arm v"></div><div class="hub"></div>
-    <div class="tip up"></div><div class="tip dn"></div><div class="tip lf"></div><div class="tip rt"></div></div>
-  <div class="btn" id="bB"><span>B<small>돌진</small></span></div>
-  <div class="btn" id="bA"><span>A<small>패스·슛</small></span></div>
-  <div class="pill" id="bMute">소리</div>
-  <div class="pill" id="bStart">START</div>
+<div id="device">
+  <div id="bezel"><div class="led"></div>
+    <div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div>
+    <div class="brand">SKYHOOP <b>POCKET</b></div></div>
+  <div id="pad">
+    <div class="dpad" id="dpad"><div class="arm h"></div><div class="arm v"></div><div class="hub"></div>
+      <div class="tip up"></div><div class="tip dn"></div><div class="tip lf"></div><div class="tip rt"></div></div>
+    <div class="btn" id="bB"><span>B<small>돌진</small></span></div>
+    <div class="btn" id="bA"><span>A<small>패스·슛</small></span></div>
+    <div class="pill" id="bMute"></div><div class="pill-label" id="lMute">소리</div>
+    <div class="pill" id="bStart"></div><div class="pill-label" id="lStart">START</div>
+    <div class="grille" id="grille"></div>
+  </div>
 </div>
 <script src="config.js"></script>
 <script>
@@ -105,27 +116,57 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const hudCanvas = document.getElementById('hud');
 const hctx = hudCanvas.getContext('2d');
-let touchMode = params.get('touch') === '1' || matchMedia('(pointer: coarse)').matches;
+let touchMode = params.get('touch') === '1' || matchMedia('(pointer: coarse)').matches; // touch tips instead of key names
 let hudScale = 1, shakeX = 0;
-function fit() { // the pixel art scales by whole device pixels; on an upright phone the buttons get the space under it
-  document.body.classList.toggle('touch', touchMode);
-  const portrait = innerHeight > innerWidth;
-  const availH = innerHeight - (touchMode && portrait ? tune.touchPanel : 0);
-  const dpr = devicePixelRatio || 1;
-  const k = Math.min(innerWidth / W, availH / H);
+const deviceEl = document.getElementById('device'), bezelEl = document.getElementById('bezel');
+const place = (el, x, y, w, h) => { el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px'; if (w != null) el.style.width = Math.round(w) + 'px'; if (h != null) el.style.height = Math.round(h) + 'px'; };
+/** Lays out the handheld for the window: upright (screen on top, buttons below) or wide (buttons either side). */
+function fit() {
+  const iw = innerWidth, ih = innerHeight, wide = iw > ih * 1.15, dpr = devicePixelRatio || 1;
+  let Dw, Dh, side = 0;
+  if (wide) { Dh = Math.min(ih, 640); Dw = Math.min(iw, Dh * 2.3); side = Math.min(Dw * 0.2, Dh * 0.46); }
+  else { Dw = Math.min(iw, ih * 0.62, 540); Dh = Math.min(ih, Dw * 1.85); }
+  const rim = wide ? Dh * 0.05 : Dw * 0.05, bp = Math.max(10, Dw * (wide ? 0.012 : 0.035)), brandH = Math.max(18, (wide ? Dh : Dw) * 0.06);
+  const maxW = wide ? Dw - 2 * side - 2 * bp : Dw - 2 * rim - 2 * bp - 8;
+  const maxH = wide ? Dh - 2 * rim - 2 * bp - brandH : Dh * 0.5;
+  const k = Math.min(maxW / W, maxH / H);
   // CSS pixels per art pixel: a whole number of device pixels, unless the screen is so dense
-  // (3 or more device pixels per art pixel) that an uneven pixel cannot be seen: then fill the width
+  // (3 or more device pixels per art pixel) that an uneven pixel cannot be seen
   const s = k * dpr >= 3 ? k : Math.max(1, Math.floor(k * dpr)) / dpr;
-  canvas.width = W; canvas.height = H;
   const cw = Math.round(W * s), ch = Math.round(H * s);
-  screenEl.style.width = cw + 'px'; screenEl.style.height = ch + 'px';
-  screenEl.style.marginTop = Math.max(0, Math.floor((availH - ch) / (touchMode && portrait ? 3 : 2))) + 'px';
+  place(deviceEl, (iw - Dw) / 2, (ih - Dh) / 2, Dw, Dh);
+  const bw = cw + 2 * bp + (wide ? 0 : 8), bh = ch + 2 * bp + brandH;
+  const bx = (Dw - bw) / 2, by = wide ? (Dh - bh) / 2 : rim;
+  place(bezelEl, bx, by, bw, bh);
+  place(screenEl, (bw - cw) / 2, bp, cw, ch);
+  const led = bezelEl.querySelector('.led'); place(led, Math.max(3, (bw - cw) / 2 - 7), bp + ch * 0.3);
+  const brand = bezelEl.querySelector('.brand'); brand.style.top = Math.round(bp + ch + brandH * 0.12) + 'px'; brand.style.fontSize = Math.round(brandH * 0.62) + 'px';
+  canvas.width = W; canvas.height = H;
   for (const c of [canvas, hudCanvas]) { c.style.width = cw + 'px'; c.style.height = ch + 'px'; }
   hudScale = s * dpr;
   hudCanvas.width = Math.round(W * hudScale); hudCanvas.height = Math.round(H * hudScale);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+  // the controls
+  const unit = wide ? Math.min(side, Dh * 0.5) : Math.min(Dw, (Dh - by - bh) * 1.1);
+  const ds = Math.min(150, unit * 0.42), aS = Math.min(84, unit * 0.22), bS = aS * 0.85;
+  let dx, dy, ax, ay, bx2, by2, py;
+  if (wide) { dx = side / 2; dy = Dh * 0.5; ax = Dw - side * 0.3; ay = Dh * 0.43; bx2 = Dw - side * 0.68; by2 = Dh * 0.58; py = Dh - 26; }
+  else {
+    const top = by + bh, h = Dh - top;
+    dx = Dw * 0.26; dy = top + h * 0.42; ax = Dw * 0.8; ay = top + h * 0.32; bx2 = Dw * 0.58; by2 = top + h * 0.5; py = top + h * 0.82;
+  }
+  dpad.style.transform = `scale(${ds / 150})`; place(dpad, dx - ds / 2, dy - ds / 2);
+  const bA = document.getElementById('bA'), bB = document.getElementById('bB');
+  place(bA, ax - aS / 2, ay - aS / 2, aS, aS); bA.style.fontSize = Math.round(aS * 0.38) + 'px';
+  place(bB, bx2 - bS / 2, by2 - bS / 2, bS, bS); bB.style.fontSize = Math.round(bS * 0.38) + 'px';
+  // 소리 and START: side by side under the buttons when upright; one in each side panel when wide
+  const mx = wide ? side / 2 : Dw / 2 - 36, sx2 = wide ? Dw - side / 2 : Dw / 2 + 36, my = wide ? Dh * 0.82 : py;
+  place(document.getElementById('bMute'), mx - 28, my - 9); place(document.getElementById('lMute'), mx - 20, my + 14);
+  place(document.getElementById('bStart'), sx2 - 28, my - 9); place(document.getElementById('lStart'), sx2 - 22, my + 14);
+  const gr = document.getElementById('grille');
+  if (wide) gr.style.display = 'none'; else { gr.style.display = 'block'; place(gr, Dw - 82, Dh - 70, 60, 48); }
 }
-addEventListener('resize', fit); fit();
+addEventListener('resize', fit);
 function rect(x, y, w, h, c) { ctx.fillStyle = col(c); ctx.fillRect(Math.round(x), Math.round(y), w, h); }
 function clear(c) { ctx.fillStyle = col(c); ctx.fillRect(0, 0, W, H); }
 /** Sharp text on the HUD layer; x, y in art pixels (y is the middle of the line), size in art pixels. */
@@ -216,7 +257,7 @@ function padAt(e) {
   if (l > 12) { const a = Math.atan2(dy, dx), oct = Math.round(a / (Math.PI / 4)); padDir.x = Math.round(Math.cos(oct * Math.PI / 4)); padDir.y = Math.round(Math.sin(oct * Math.PI / 4)); }
   dpad.className = 'dpad' + (padDir.y < 0 ? ' on-up' : '') + (padDir.y > 0 ? ' on-dn' : '') + (padDir.x < 0 ? ' on-lf' : '') + (padDir.x > 0 ? ' on-rt' : '');
 }
-dpad.addEventListener('pointerdown', e => { e.preventDefault(); if (!touchMode) { touchMode = true; fit(); } padId = e.pointerId; dpad.setPointerCapture(e.pointerId); padAt(e); startAudio(); });
+dpad.addEventListener('pointerdown', e => { e.preventDefault(); touchMode = true; padId = e.pointerId; dpad.setPointerCapture(e.pointerId); padAt(e); startAudio(); });
 dpad.addEventListener('pointermove', e => { if (e.pointerId === padId) padAt(e); });
 function padUp(e) { if (e.pointerId === padId) { padId = null; padDir.x = padDir.y = 0; dpad.className = 'dpad'; } }
 dpad.addEventListener('pointerup', padUp); dpad.addEventListener('pointercancel', padUp);
@@ -228,10 +269,11 @@ function bindButton(id, code) {
 }
 bindButton('bA', 'KeyZ'); bindButton('bB', 'KeyX'); bindButton('bStart', 'Enter'); bindButton('bMute', 'KeyM');
 canvas.addEventListener('pointerdown', e => { // a tap on the screen starts and restarts
-  if (e.pointerType !== 'mouse' && !touchMode) { touchMode = true; fit(); }
+  if (e.pointerType !== 'mouse') touchMode = true;
   if (scene === 'title' || scene === 'results' || scene === 'pause') hit.add('Enter');
 });
 addEventListener('contextmenu', e => e.preventDefault());
+fit();
 
 // ---- Audio: square-wave beeps, started on first input, mute on M ----------------------------
 let audio = null, muted = false;
@@ -500,7 +542,7 @@ function updateRumblers(dt) {
       events.push({ type: 'hit', rider: r.id, t: state.t });
       if (Math.abs(r.x - R[0].x) < 100) { SFX.thud(); state.shake = Math.max(state.shake, 0.15); }
       if (b.holder === r.id) { release(r); b.mode = 'free'; b.vx = (rng() - 0.5) * 60; b.vy = -40 - rng() * 20; if (r.team === 1) msg('상대가 공을 놓쳤다!', 1.2); }
-      if (r.id === 0) { msg('럼블러에 맞았다!', 1.2); state.charging = false; }
+      if (r.id === 0) { msg('방해공에 맞았다!', 1.2); state.charging = false; }
       rb.vx = -rb.vx * 0.6; rb.vy = -50; rb.rest = tune.rumblerRest; rb.target = -1;
       break;
     }
@@ -515,7 +557,7 @@ function updateGlimmer(dt) {
       let gx = 0, best = -1; // appear where no flyer is close
       for (let k = 0; k < 8; k++) { const x = 20 + rng() * (tune.fieldWidth - 40), d = Math.min(...R.filter(r => r.role === 'flyer').map(r => Math.abs(r.x - x))); if (d > best) { best = d; gx = x; } }
       g.active = true; g.x = gx; g.y = TOP + 14; g.px = g.x; g.py = g.y; g.turnT = 0;
-      state.glimmerNote = 3.5; SFX.bell(); msg('글리머 등장!', 2); events.push({ type: 'glimmer', t: state.t });
+      state.glimmerNote = 3.5; SFX.bell(); msg('황금공 등장!', 2); events.push({ type: 'glimmer', t: state.t });
     }
     return;
   }
@@ -552,7 +594,7 @@ function finish(reason) {
   const [a, b] = state.score;
   state.over = true; state.endReason = reason; state.winner = a > b ? 0 : b > a ? 1 : -1;
   const head = state.winner === 0 ? '승리!' : state.winner === 1 ? '패배' : '무승부';
-  const how = reason === 'mine' ? '우리가 글리머를 잡았다' : reason === 'theirs' ? '상대가 글리머를 잡았다' : '시간 종료';
+  const how = reason === 'mine' ? '우리가 황금공를 잡았다' : reason === 'theirs' ? '상대가 황금공를 잡았다' : '시간 종료';
   state.gained = head + ' ' + how; state.resultsT = 0;
   events.push({ type: 'end', winner: state.winner, reason, score: [a, b], t: state.t });
   if (state.winner === 0) SFX.win(); else SFX.lose();
@@ -828,7 +870,7 @@ function drawHUD() {
   if (st.tut < tips.length && st.t < 45 && st.msgs.length === 0 && !(st.tut === 3 && st.t > 25)) {
     rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text(tips[st.tut], W / 2, 21.5, 8, 0, 'center');
   }
-  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('글리머를 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
+  if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('황금공를 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
 }
 const TEAMS_SHORT = ['등불매', '폭풍까마귀'];
 function panel(x, y, w, h) { rect(x, y, w, h, '3'); rect(x + 1, y + 1, w - 2, h - 2, '0'); rect(x + 2, y + 2, w - 4, h - 4, '3'); rect(x + 3, y + 3, w - 6, h - 6, '#2a2045'); }
@@ -854,8 +896,8 @@ const scenes = {
     update(dt) { state.t += dt; },
     draw() {
       clear('#8cc8f2'); rect(0, 0, W, 16, '3'); text('스카이훅 포켓의 선수와 공', W / 2, 8, 9, 'y', 'center', -1);
-      const items = [['usFlyer', '등불매 선수'], ['usKeeper', '등불매 키퍼'], ['volla', '볼라'], ['glimmerA', '글리머'],
-        ['rivalFlyer', '까마귀 선수'], ['rivalKeeper', '까마귀 키퍼'], ['rumbler', '럼블러']];
+      const items = [['usFlyer', '등불매 선수'], ['usKeeper', '등불매 키퍼'], ['volla', '득점공'], ['glimmerA', '황금공'],
+        ['rivalFlyer', '까마귀 선수'], ['rivalKeeper', '까마귀 키퍼'], ['rumbler', '방해공']];
       items.forEach(([s, n], i) => {
         const colN = i % 4, row = Math.floor(i / 4), x = 34 + colN * 63, y = 50 + row * 56;
         const c = sprite(s, false); ctx.drawImage(c, 0, 0, c.width, c.height, Math.round(x - c.width), Math.round(y - c.height), c.width * 2, c.height * 2);
@@ -919,7 +961,7 @@ function tick() {
 function drawFrame() {
   hudClear(); shakeX = 0;
   scenes[scene].draw();
-  const mb = document.getElementById('bMute'); if (mb) mb.textContent = muted ? '소리 꺼짐' : '소리';
+  const mb = document.getElementById('lMute'); if (mb) mb.textContent = muted ? '소리 끔' : '소리';
 }
 function frame() { tick(); requestAnimationFrame(frame); }
 // A headless browser on a time budget runs timers but almost no animation frames: a timer
