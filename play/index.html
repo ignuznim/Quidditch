@@ -72,22 +72,23 @@
   /* A and B: domed, plum-magenta */
   .btn { position: absolute; border-radius: 50%;
     background: radial-gradient(circle at 38% 32%, #b4568f 0%, #93306f 38%, #7d2460 70%, #66194d 100%);
-    box-shadow: 1px 4px 0 #4d1239, 1px 5px 4px rgba(0,0,0,0.3), inset 0 -2px 3px rgba(0,0,0,0.25); }
+    box-shadow: 0 2px 0 #4d1239, 0 3px 3px rgba(0,0,0,0.28), inset 0 -2px 3px rgba(0,0,0,0.25); }
   .btn::after { content: ''; position: absolute; left: 22%; top: 16%; width: 34%; height: 22%; border-radius: 50%;
     background: radial-gradient(ellipse, rgba(255,255,255,0.35), transparent 70%); }
-  .btn.down { transform: translateY(3px); box-shadow: 0 1px 0 #4d1239, inset 0 -1px 2px rgba(0,0,0,0.3); filter: brightness(0.9); }
+  .btn.down { transform: translateY(2px); box-shadow: 0 1px 0 #4d1239, inset 0 -1px 2px rgba(0,0,0,0.3); filter: brightness(0.9); }
   .lab { position: absolute; color: #2a3b9c; font-family: Futura, "Century Gothic", "Trebuchet MS", Arial, sans-serif; font-weight: 700;
     font-style: italic; letter-spacing: 0.08em; white-space: nowrap; transform-origin: 50% 50%; }
   /* SELECT and START: pale lavender rubber keys sitting in their own slots */
   .pill { position: absolute; border-radius: 999px; transform-origin: 50% 50%;
     background: linear-gradient(180deg, #d4d2e2 0%, #b8b6c8 55%, #9e9cb0 100%);
-    box-shadow: 1px 2px 0 #7f7d90, inset 0 1px 0 rgba(255,255,255,0.7); }
+    box-shadow: 0 1px 0 #7f7d90, inset 0 1px 0 rgba(255,255,255,0.7); }
   .pill.down { filter: brightness(0.9); box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); }
   /* the speaker: six slanted slots cut through the shell */
   .slot { position: absolute; border-radius: 999px; transform-origin: 50% 50%;
     background: linear-gradient(90deg, #8a8884 0%, #9d9b97 45%, #b3b1ad 100%);
     box-shadow: inset 2px 2px 3px rgba(0,0,0,0.45), inset -1px -1px 1px rgba(255,255,255,0.35), 1px 1px 0 #eeede9; }
-  .phones { position: absolute; border-radius: 999px; border: 1.5px solid #bdbbb7; box-shadow: inset 0 1px 0 #b0aeaa, 0 1px 0 #eeede9; }
+  .phones { position: absolute; border-radius: 999px; border: 1.5px solid #bdbbb7; box-shadow: inset 0 1px 0 #b0aeaa, 0 1px 0 #eeede9;
+    display: flex; align-items: center; justify-content: center; color: #b3b1ad; font-family: Arial, sans-serif; font-weight: 700; letter-spacing: 0.06em; text-shadow: 0 1px 0 #efeee9; }
 </style>
 </head>
 <body>
@@ -98,8 +99,8 @@
   <div id="bezel">
     <div class="stripe" id="sL1" style="background:#8a2d5c"></div><div class="stripe" id="sL2" style="background:#2c3075"></div>
     <div class="stripe" id="sR1" style="background:#8a2d5c"></div><div class="stripe" id="sR2" style="background:#2c3075"></div>
-    <div class="stripetext" id="stext">PIXEL SKY WITH SQUARE SOUND</div>
-    <div class="led"></div><div class="ledlabel">POWER</div>
+    <div class="stripetext" id="stext">DOT MATRIX WITH STEREO SOUND</div>
+    <div class="led"></div><div class="ledlabel">BATTERY</div>
     <div id="lcd"><div id="screen"><canvas id="game"></canvas><canvas id="hud"></canvas></div></div>
   </div>
   <div class="brand" id="brand"><span class="small">Pixel</span> <span class="big">POCKET BOY</span></div>
@@ -116,7 +117,7 @@
     <div class="pill" id="bMute"></div><div class="pill" id="bStart"></div>
     <div class="lab" id="lMute">SELECT</div><div class="lab" id="lStart">START</div>
     <div id="grille"></div>
-    <div class="phones" id="phones"></div>
+    <div class="phones" id="phones"><span>&#8745;PHONES</span></div>
   </div>
 </div>
 <script src="config.js"></script>
@@ -239,7 +240,8 @@ function fit() {
   place(el('dimple'), ds / 2 - ds * 0.12, ds / 2 - ds * 0.12, ds * 0.24, ds * 0.24);
   // A and B in one slanted dish, their letters below and to the right
   const aS = u * 12, [ax, ay] = at(86.6, 107.4), [bx, by] = at(70.4, 114.8);
-  const wl = Math.hypot(ax - bx, ay - by) + u * 15.5, wh = u * 15.5, ang = Math.atan2(ay - by, ax - bx);
+  const gap = u * 1.6; // the same gap all round every key and its dish
+  const wl = Math.hypot(ax - bx, ay - by) + aS + gap * 2, wh = aS + gap * 2, ang = Math.atan2(ay - by, ax - bx);
   const aw = el('abwell'); place(aw, (ax + bx) / 2 - wl / 2, (ay + by) / 2 - wh / 2, wl, wh); aw.style.borderRadius = wh / 2 + 'px'; aw.style.transform = `rotate(${ang}rad)`;
   place(el('bA'), ax - aS / 2, ay - aS / 2, aS, aS); place(el('bB'), bx - aS / 2, by - aS / 2, aS, aS);
   const lab = (id, x, y, size, rot) => { const e = el(id); e.style.fontSize = size + 'px'; e.style.left = '0px'; e.style.top = '0px'; e.style.transform = '';
@@ -249,8 +251,9 @@ function fit() {
   const rot = -25;
   for (const [wid, id, lid, x0, lx] of [['wSel', 'bMute', 'lMute', 37, 39], ['wStart', 'bStart', 'lStart', 53.9, 56]]) {
     const [x, y] = at(x0, 135.6);
-    const w = el(wid); place(w, x - u * 7.8, y - u * 3.1, u * 15.6, u * 6.2); w.style.borderRadius = u * 3.1 + 'px'; w.style.transform = `rotate(${rot}deg)`;
-    const k = el(id); place(k, x - u * 6, y - u * 1.8, u * 12, u * 3.6); k.style.transform = `rotate(${rot}deg)`;
+    const pw = u * 12, ph2 = u * 3.6, ww = pw + gap * 2, wh2 = ph2 + gap * 2;
+    const w = el(wid); place(w, x - ww / 2, y - wh2 / 2, ww, wh2); w.style.borderRadius = wh2 / 2 + 'px'; w.style.transform = `rotate(${rot}deg)`;
+    const k = el(id); place(k, x - pw / 2, y - ph2 / 2, pw, ph2); k.style.transform = `rotate(${rot}deg)`;
     const [lx2, ly2] = at(lx, 143.6); lab(lid, lx2, ly2, u * 2.75, rot);
   }
   // the speaker: six slots leaning right, cut through the shell in the lower right
@@ -258,7 +261,7 @@ function fit() {
   if (!gr.children.length) for (let i = 0; i < 6; i++) { const e = document.createElement('div'); e.className = 'slot'; gr.appendChild(e); }
   [...gr.children].forEach((e, i) => { const [x, y] = at(66.9 + i * 5.56, 153.7 - i * 2.4); place(e, x - u * 1.3, y - u * 8.6, u * 2.6, u * 17.2); e.style.transform = 'rotate(30deg)'; });
   // the headphone notch at the bottom edge
-  place(el('phones'), Dw / 2 - u * 14, Dh - Math.max(u * 4.4, sa.b + u * 1.2), u * 16, u * 3.4);
+  const ph = el('phones'); place(ph, Dw / 2 - u * 14, Dh - Math.max(u * 4.4, sa.b + u * 1.2), u * 16, u * 3.4); ph.style.fontSize = u * 1.9 + 'px';
 }
 addEventListener('resize', fit);
 function rect(x, y, w, h, c) { ctx.fillStyle = col(c); ctx.fillRect(Math.round(x), Math.round(y), w, h); }
