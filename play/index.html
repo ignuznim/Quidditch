@@ -129,14 +129,35 @@
 
 // ---- Built to be checked ----------------------------------------------------------------
 const params = new URLSearchParams(location.search);
-const tune = new Proxy({}, { get: (_, k) => CONFIG[k].value }); // live: tune.speed is CONFIG.speed.value
+let LEVEL = null; // the chosen difficulty's values (config.js DIFFICULTY), over config.js's own
+const tune = new Proxy({}, { get: (_, k) => (LEVEL && k in LEVEL) ? LEVEL[k] : CONFIG[k].value }); // live: tune.speed is CONFIG.speed.value
 const STEP = 1 / 60;            // simulation step in seconds; motion is per second, never per frame
 const W = 208, H = 160;         // the pixel screen: a close view, so riders read large on a phone
 const PIXEL = true;             // crisp scale, no smoothing
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","WenQuanYi Zen Hei",sans-serif';
 const TITLE = '퀴디치 포켓';
-const CONTROLS = ['당신은 그리핀도르 수색꾼!', '방향키: 날기 · X: 돌진(밀쳐내기)', 'Z: 손 뻗기, 노란 칸에서 떼면 잡기', 'Enter: 일시정지 · M: 소리'];
-const TOUCH_CONTROLS = ['당신은 그리핀도르 수색꾼!', '십자키: 날기 · B: 돌진(밀쳐내기)', 'A: 손 뻗기, 노란 칸에서 떼면 잡기', 'START: 일시정지 · SELECT: 소리'];
+const CONTROLS = ['당신은 수색꾼!', '방향키: 날기 · X: 돌진(밀쳐내기)', 'Z: 손 뻗기, 노란 칸에서 떼면 잡기', 'Enter: 일시정지 · M: 소리'];
+const TOUCH_CONTROLS = ['당신은 수색꾼!', '십자키: 날기 · B: 돌진(밀쳐내기)', 'A: 손 뻗기, 노란 칸에서 떼면 잡기', 'START: 일시정지 · SELECT: 소리'];
+// The four houses: a name, robe colours for the sprites, and a light colour for the scoreboard.
+const HOUSES = [
+  { name: '그리핀도르', robe: '#d0343c', dark: '#7e1e26', light: '#ffd84a' },
+  { name: '슬리데린', robe: '#2f9a5a', dark: '#1d5a36', light: '#9fe0b0' },
+  { name: '후플푸프', robe: '#f0be2c', dark: '#2b2622', light: '#ffe58a' },
+  { name: '래번클로', robe: '#2f5fbf', dark: '#a8743a', light: '#9cc0ff' },
+];
+const LEVELS = ['쉬움', '보통', '어려움'];
+const LEVEL_NOTE = ['스니치가 잘 보이고, 상대가 느려요', '알맞게 겨뤄요', '찾기도 잡기도 어려워요'];
+const setup = { mine: 0, theirs: 1, level: 1, row: 0 };
+try { Object.assign(setup, JSON.parse(localStorage.getItem('pocketboy.quidditch') || '{}'), { row: 0 }); } catch (e) { /* no storage: the defaults */ }
+for (const k of ['mine', 'theirs', 'level']) if (params.has(k)) setup[k] = Number(params.get(k)); // ?mine=2&theirs=3&level=0 for a check
+const houseOf = team => HOUSES[team === 0 ? setup.mine : setup.theirs];
+/** Puts the chosen houses' colours on the sprites and the chosen level's values in force. */
+function applySetup() {
+  COL.o = houseOf(0).robe; COL.O = houseOf(0).dark; COL.t = houseOf(1).robe; COL.T = houseOf(1).dark;
+  if (typeof sprCache !== 'undefined') sprCache.clear();
+  LEVEL = (window.DIFFICULTY || {})[['easy', 'normal', 'hard'][setup.level]] || null;
+  try { localStorage.setItem('pocketboy.quidditch', JSON.stringify({ mine: setup.mine, theirs: setup.theirs, level: setup.level })); } catch (e) { /* not kept */ }
+}
 const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 }; // a check may inject one
 const CHEAP = params.get('render') === 'cheap';
 let seed;
@@ -582,8 +603,8 @@ function goal(side, i) {
   state.score[team] += tune.goalPoints;
   state.lantern[String(side)] = 1.4; state.cheer = 1.4; state.hoopHit = { side, i, t: 1.4 };
   events.push({ type: 'goal', team, hoop: i, t: state.t });
-  if (team === 0) { state.stats.goals++; SFX.goal(); msg('그리핀도르 골! +' + tune.goalPoints, 1.8); }
-  else { state.stats.conceded++; SFX.conceded(); msg('슬리데린 골…', 1.4); }
+  if (team === 0) { state.stats.goals++; SFX.goal(); msg(houseOf(0).name + ' 골! +' + tune.goalPoints, 1.8); }
+  else { state.stats.conceded++; SFX.conceded(); msg(houseOf(1).name + ' 골…', 1.4); }
   const keeper = RD().find(k => k.role === 'keeper' && k.team !== team);
   give(keeper, 'restart'); keeper.holdT = -tune.resetDelay;
 }
@@ -693,7 +714,7 @@ function updateRumblers(dt) {
       r.stun = tune.stunTime; if (r.id === ME) state.stats.hits++;
       events.push({ type: 'hit', rider: r.id, t: state.t });
       if (nearCam(r.x)) { SFX.thud(); state.shake = Math.max(state.shake, 0.15); }
-      if (b.holder === r.id) { release(r); b.mode = 'free'; b.vx = (rng() - 0.5) * 60; b.vy = -40 - rng() * 20; if (nearCam(r.x)) msg(r.team === 1 ? '슬리데린이 퀘이플을 놓쳤다!' : '퀘이플을 놓쳤다!', 1.2); }
+      if (b.holder === r.id) { release(r); b.mode = 'free'; b.vx = (rng() - 0.5) * 60; b.vy = -40 - rng() * 20; if (nearCam(r.x)) msg(r.team === 1 ? '상대가 퀘이플을 놓쳤다!' : '퀘이플을 놓쳤다!', 1.2); }
       if (r.id === ME) { msg('블러저에 맞았다!', 1.2); state.charging = false; state.reaching = false; }
       rb.vx = -rb.vx * 0.6; rb.vy = -50; rb.rest = tune.rumblerRest; rb.target = -1; rb.batT = 0; rb.batTeam = -1;
       break;
@@ -721,11 +742,11 @@ function updateGlimmer(dt) {
   }
   // a glint every few seconds shows where it is; up close you see it anyway
   g.glintT -= dt; g.glint = Math.max(0, g.glint - dt);
-  if (g.glintT <= 0) { g.glint = tune.glintTime; g.glintT = tune.glintEvery * (0.7 + rng() * 0.6); g.gx = g.x; g.gy = g.y; if (nearCam(g.x)) tone(2637, 0.05, 'triangle', 0.08); }
+  if (g.glintT <= 0) { g.glint = tune.glintTime; g.glintT = tune.glintEvery * (0.7 + rng() * 0.6); g.gx = g.x; g.gy = g.y; g.rivalSaw = rng() < tune.rivalNotice; if (nearCam(g.x)) tone(2637, 0.05, 'triangle', 0.08); }
   for (const r of seekers) {
     const d = dist(r, g);
     // the rival's hand closes on it now and then while it is in reach; yours needs the timed reach (A)
-    if (r.id !== ME && d < tune.rivalReach && r.stun <= 0 && rng() < tune.rivalCatchRate * dt) { catchGlimmer(r); return; }
+    if (r.id !== ME && state.t >= tune.glimmerAt + tune.snitchHide && d < tune.rivalReach && r.stun <= 0 && rng() < tune.rivalCatchRate * dt) { catchGlimmer(r); return; }
     if (d < tune.glimmerFlee && g.dartT <= 0) {
       const ax = g.x - r.x, ay = g.y - r.y, l = Math.hypot(ax, ay) || 1, s = rng() < 0.5 ? -1 : 1;
       g.wx = ax / l + (-ay / l) * s * 0.8; g.wy = ay / l + (ax / l) * s * 0.8;
@@ -749,7 +770,7 @@ function finish(reason) {
   const [a, b] = state.score;
   state.over = true; state.endReason = reason; state.winner = a > b ? 0 : b > a ? 1 : -1;
   const head = state.winner === 0 ? '승리!' : state.winner === 1 ? '패배' : '무승부';
-  const how = reason === 'mine' ? '당신이 골든 스니치를 잡았다!' : reason === 'theirs' ? '슬리데린 수색꾼이 스니치를 잡았다' : '시간 종료';
+  const how = reason === 'mine' ? '당신이 골든 스니치를 잡았다!' : reason === 'theirs' ? houseOf(1).name + ' 수색꾼이 스니치를 잡았다' : '시간 종료';
   state.gained = head + ' ' + how; state.resultsT = 0;
   events.push({ type: 'end', winner: state.winner, reason, score: [a, b], t: state.t });
   if (state.winner === 0) SFX.win(); else SFX.lose();
@@ -816,7 +837,7 @@ function aiSeeker(r, dt) {
   }
   // the rival sees what you see: the last glint, or the snitch itself once close
   r.aiT -= dt;
-  if (r.aiT <= 0 && (g.glint > 0 || dist(r, g) < tune.snitchSight)) { r.sx = g.x; r.sy = g.y; r.aiT = tune.seekerLag; }
+  if (r.aiT <= 0 && ((g.glint > 0 && g.rivalSaw) || dist(r, g) < tune.rivalSight)) { r.sx = g.x; r.sy = g.y; r.aiT = tune.seekerLag; } // its own eyes: easier levels make the snitch plainer to you, not to it
   if (r.dashCd <= 0 && dist(r, g) < 26 && rng() < 0.05) startDash(r, g.x - r.x, g.y - r.y);
   const inp = steerInput(r, r.sx, r.sy); fly(r, inp.ix, inp.iy, dt, m * (r.team === 1 ? tune.rivalSeekerSpeed : tune.mateSeekerSpeed));
 }
@@ -946,7 +967,7 @@ function drawWorld(cam, tNow) {
   }
   for (let i = 0; i < 10; i++) {
     const x = ((i * 61 - pt) % 420 + 420) % 420 - 70, h = 40 + (i * 7) % 18, y = FLOOR - h;
-    const roof = i % 2 ? '#c8323a' : '#2f9a5a', flag = i % 2 ? 'o' : 't';
+    const roof = i % 2 ? houseOf(0).robe : houseOf(1).robe, flag = i % 2 ? 'o' : 't';
     rect(x, y, 12, h, '#cdb89c'); rect(x + 9, y, 3, h, '#a8937a'); rect(x - 1, y - 1, 14, 2, '#8a7a66');
     rect(x, y - 8, 12, 7, roof); rect(x + 2, y - 12, 8, 4, roof); rect(x + 4, y - 15, 4, 3, roof); rect(x + 5, y - 19, 1, 4, '3');
     rect(x + 6, y - 19, 6, 3, flag);
@@ -1042,8 +1063,8 @@ function drawHUD() {
   const st = state;
   rect(0, 0, W, 14, '3'); rect(0, 14, W, 1, '#3b2f5c');
   drawSpr('hawk', 8, 7); drawSpr('crow', W - 8, 7, true);
-  text(TEAMS_SHORT[0] + ' ' + st.score[0], 15, 7, 8, 'y', 'left', -1);
-  text(st.score[1] + ' ' + TEAMS_SHORT[1], W - 15, 7, 8, '#9fe0b0', 'right', -1);
+  text(houseOf(0).name + ' ' + st.score[0], 15, 7, 8, houseOf(0).light, 'left', -1);
+  text(st.score[1] + ' ' + houseOf(1).name, W - 15, 7, 8, houseOf(1).light, 'right', -1);
   const left = Math.max(0, Math.ceil(tune.matchTime - st.t)), mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
   if (!(left <= 10 && Math.floor(st.t * 4) % 2 === 0)) text(`${mm}:${ss}`, W / 2, 6.5, 9, 0, 'center', -1);
   if (!st.glimmer.active) { // a bar filling toward the glimmer
@@ -1076,7 +1097,6 @@ function drawHUD() {
   }
   if (st.glimmerNote > 0 && st.msgs.length === 0) { rect(0, 15, W, 13, 'rgba(26,16,48,0.55)'); text('먼저 잡으면 +' + tune.glimmerPoints + '점, 경기 끝!', W / 2, 21.5, 8, 'y', 'center'); }
 }
-const TEAMS_SHORT = ['그리핀도르', '슬리데린'];
 function panel(x, y, w, h) { rect(x, y, w, h, '3'); rect(x + 1, y + 1, w - 2, h - 2, '0'); rect(x + 2, y + 2, w - 4, h - 4, '3'); rect(x + 3, y + 3, w - 6, h - 6, '#2a2045'); }
 function drawTitle() {
   const tNow = clock.now();
@@ -1104,6 +1124,9 @@ const GAMES = [
   { id: 'next3', name: '준비 중', note: '새 게임이 들어올 자리예요', ready: false },
 ];
 let menuSel = 0, menuPad = 0, bootT = 0, menuMsg = 0;
+function navLeft() { const e = padDir.x < 0 && menuPadX >= 0; return pressed('ArrowLeft') || pressed('KeyA') || e; }
+function navRight() { const e = padDir.x > 0 && menuPadX <= 0; return pressed('ArrowRight') || pressed('KeyD') || e; }
+let menuPadX = 0;
 function navUp() { const e = padDir.y < 0 && menuPad >= 0; return pressed('ArrowUp') || pressed('KeyW') || e; }
 function navDown() { const e = padDir.y > 0 && menuPad <= 0; return pressed('ArrowDown') || pressed('KeyS') || e; }
 function drawCart(x, y, game, on) { // a little cartridge for each game
@@ -1135,7 +1158,7 @@ const scenes = {
       menuPad = padDir.y;
       if (startHit() || aHit()) {
         const g = GAMES[menuSel];
-        if (g.ready) { tone(1319, 0.08, 'square', 0.16); reset(); scene = g.start; }
+        if (g.ready) { tone(1319, 0.08, 'square', 0.16); applySetup(); reset(); scene = g.start; }
         else { menuMsg = 1.4; tone(220, 0.1, 'square', 0.14); }
       }
     },
@@ -1159,8 +1182,8 @@ const scenes = {
     update(dt) { state.t += dt; },
     draw() {
       clear('#8cc8f2'); rect(0, 0, W, 16, '3'); text('퀴디치 포켓의 선수와 공', W / 2, 8, 9, 'y', 'center', -1);
-      const items = [['usKeeper', '그리핀도르', '파수꾼'], ['usFlyer', '그리핀도르', '추격꾼'], ['usBeater', '그리핀도르', '몰이꾼'], ['usSeeker', '그리핀도르', '수색꾼'],
-        ['rivalKeeper', '슬리데린', '파수꾼'], ['rivalFlyer', '슬리데린', '추격꾼'], ['rivalBeater', '슬리데린', '몰이꾼'], ['rivalSeeker', '슬리데린', '수색꾼'],
+      const items = [['usKeeper', houseOf(0).name, '파수꾼'], ['usFlyer', houseOf(0).name, '추격꾼'], ['usBeater', houseOf(0).name, '몰이꾼'], ['usSeeker', houseOf(0).name, '수색꾼'],
+        ['rivalKeeper', houseOf(1).name, '파수꾼'], ['rivalFlyer', houseOf(1).name, '추격꾼'], ['rivalBeater', houseOf(1).name, '몰이꾼'], ['rivalSeeker', houseOf(1).name, '수색꾼'],
         ['volla', '퀘이플', ''], ['rumbler', '블러저', ''], ['glimmerA', '골든 스니치', ''], ['usBeaterSwing', '몰이꾼', '방망이질']];
       items.forEach(([s, n1, n2], i) => {
         const colN = i % 4, row = Math.floor(i / 4), x = 28 + colN * 51, y = 36 + row * 43;
@@ -1169,8 +1192,49 @@ const scenes = {
       });
     },
   },
+  setup: { // choose your house, the other house, and how hard
+    update() {
+      const rows = 4;
+      if (navUp()) { setup.row = (setup.row + rows - 1) % rows; tone(880, 0.04, 'square', 0.12); }
+      if (navDown()) { setup.row = (setup.row + 1) % rows; tone(880, 0.04, 'square', 0.12); }
+      const dx = navRight() ? 1 : navLeft() ? -1 : 0;
+      menuPad = padDir.y; menuPadX = padDir.x;
+      if (dx) {
+        tone(988, 0.04, 'square', 0.12);
+        if (setup.row === 0) { do setup.mine = (setup.mine + dx + 4) % 4; while (setup.mine === setup.theirs); }
+        if (setup.row === 1) { do setup.theirs = (setup.theirs + dx + 4) % 4; while (setup.theirs === setup.mine); }
+        if (setup.row === 2) setup.level = clamp(setup.level + dx, 0, 2);
+      }
+      if (startHit() || (aHit() && setup.row === 3)) { applySetup(); reset(); scene = 'play'; tone(1319, 0.08, 'square', 0.16); }
+      else if (aHit()) setup.row = 3;
+      else if (bHit()) scene = 'title';
+    },
+    draw() {
+      clear('#2a2045'); for (let y = 0; y < H; y += 4) rect(0, y, W, 1, '#30264f');
+      rect(0, 0, W, 18, '3'); text('경기 준비', W / 2, 9, 10, 'y', 'center', -1);
+      const row = (i, label, value, col2) => {
+        const y = 30 + i * 27, on = setup.row === i;
+        if (on) { rect(6, y - 9, W - 12, 22, '#fff4dc'); rect(7, y - 8, W - 14, 20, '#3b6a8a'); }
+        text(label, 14, y + 2, 8, on ? 'w' : 'g', 'left', -1);
+        if (value != null) {
+          if (col2) { rect(84, y - 3, 10, 10, '3'); rect(85, y - 2, 8, 8, col2); }
+          text(value, 140, y + 2, 9, on ? 'y' : 0, 'center', -1);
+          if (on) for (let i = 0; i < 4; i++) { rect(98 + i, y + 2 - i, 1, 1 + 2 * i, 'y'); rect(182 - i, y + 2 - i, 1, 1 + 2 * i, 'y'); } // two little arrows, drawn
+        }
+      };
+      row(0, '우리 기숙사', houseOf(0).name, houseOf(0).robe);
+      row(1, '상대 기숙사', houseOf(1).name, houseOf(1).robe);
+      row(2, '난이도', LEVELS[setup.level]);
+      const y3 = 30 + 3 * 27, on3 = setup.row === 3;
+      rect(W / 2 - 44, y3 - 9, 88, 22, on3 ? 'y' : '3'); rect(W / 2 - 43, y3 - 8, 86, 20, on3 ? '#c58a1c' : '#3b2f5c');
+      text('경기 시작', W / 2, y3 + 2, 10, on3 ? 'w' : 0, 'center', -1);
+      rect(0, H - 22, W, 22, '3');
+      text(LEVEL_NOTE[setup.level], W / 2, H - 15, 8, 0, 'center', -1);
+      text(touchMode ? '위·아래: 항목 · 좌·우: 바꾸기 · START: 시작' : '위·아래: 항목 · 좌·우: 바꾸기 · Enter: 시작', W / 2, H - 6, 6.5, 'g', 'center', -1);
+    },
+  },
   title: {
-    update() { if (startHit() || aHit()) { reset(); scene = 'play'; } else if (bHit()) scene = 'menu'; },
+    update() { if (startHit() || aHit()) { scene = 'setup'; setup.row = 0; menuPad = padDir.y; menuPadX = padDir.x; } else if (bHit()) scene = 'menu'; },
     draw() { drawTitle(); },
   },
   play: {
@@ -1194,7 +1258,7 @@ const scenes = {
       for (const e of [...RD(), state.ball, ...state.rumblers, state.glimmer]) { e.px = e.x; e.py = e.y; }
       state.camPX = state.camX;
       if (state.resultsT > 0.8 && (startHit() || aHit())) { reset(); scene = 'play'; }
-      else if (state.resultsT > 0.8 && bHit()) scene = 'menu';
+      else if (state.resultsT > 0.8 && bHit()) { scene = 'setup'; setup.row = 0; }
     },
     draw() {
       drawPlay(1);
@@ -1203,10 +1267,10 @@ const scenes = {
       text(head, W / 2, 42, 18, st.winner === 0 ? 'y' : st.winner === 1 ? '#9fd0e8' : 'w', 'center');
       text(st.gained.replace(/^\S+\s/, ''), W / 2, 60, 9, 0, 'center', -1);
       drawSpr('hawk', W / 2 - 50, 80); drawSpr('crow', W / 2 + 50, 80, true);
-      digits(st.score[0], W / 2 - 8, 74, 'y', 3, 'right'); digits(st.score[1], W / 2 + 8, 74, '#9fe0b0', 3, 'left'); rect(W / 2 - 1, 78, 2, 2, '0'); rect(W / 2 - 1, 84, 2, 2, '0');
-      text(`그리핀도르 골 ${st.stats.goals} · 슬리데린 골 ${st.stats.conceded}`, W / 2, 101, 8, 0, 'center', -1);
+      digits(st.score[0], W / 2 - 8, 74, houseOf(0).light, 3, 'right'); digits(st.score[1], W / 2 + 8, 74, houseOf(1).light, 3, 'left'); rect(W / 2 - 1, 78, 2, 2, '0'); rect(W / 2 - 1, 84, 2, 2, '0');
+      text(`${houseOf(0).name} 골 ${st.stats.goals} · ${houseOf(1).name} 골 ${st.stats.conceded}`, W / 2, 101, 8, 0, 'center', -1);
       text(`헛손질 ${st.stats.misses} · 블러저에 맞음 ${st.stats.hits}`, W / 2, 112, 8, 0, 'center', -1);
-      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? 'A: 다시 하기 · B: 게임 목록' : 'Enter: 다시 하기 · X: 게임 목록', W / 2, 130, 9, 'w', 'center');
+      if (st.resultsT > 0.8 && Math.floor(clock.now() * 2) % 2 === 0) text(touchMode ? 'A: 다시 하기 · B: 경기 준비' : 'Enter: 다시 하기 · X: 경기 준비', W / 2, 130, 9, 'w', 'center');
     },
   },
 };
@@ -1247,6 +1311,7 @@ window.game = {
   },
 };
 
+applySetup();
 reset();
 scene = params.get('scene') || 'boot';
 last = clock.now();
